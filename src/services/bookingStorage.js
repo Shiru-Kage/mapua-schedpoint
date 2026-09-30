@@ -93,13 +93,15 @@ export async function submitBooking(bookingPayload) {
     };
   }
 
-  // Validate official Mapúa email
+  // Validate email domain (@mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com)
   const cleanEmail = String(email || '').trim().toLowerCase();
-  const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || cleanEmail.endsWith('@mapua.edu.ph');
+  const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || 
+                       cleanEmail.endsWith('@mapua.edu.ph') || 
+                       cleanEmail.endsWith('@gmail.com');
   if (!isValidEmail) {
     return {
       success: false,
-      error: 'Invalid email. Must be an official Mapúa account ending with @mymail.mapua.edu.ph or @mapua.edu.ph'
+      error: 'Invalid email. Must be from @mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com'
     };
   }
 

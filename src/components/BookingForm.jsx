@@ -47,9 +47,11 @@ export default function BookingForm({
 
       if (emailVal.includes('@')) {
         const lower = emailVal.toLowerCase();
-        const isValid = lower.endsWith('@mymail.mapua.edu.ph') || lower.endsWith('@mapua.edu.ph');
+        const isValid = lower.endsWith('@mymail.mapua.edu.ph') || 
+                        lower.endsWith('@mapua.edu.ph') || 
+                        lower.endsWith('@gmail.com');
         if (!isValid) {
-          setEmailError('Must be an official Mapúa email ending in @mymail.mapua.edu.ph or @mapua.edu.ph');
+          setEmailError('Must be an email ending in @mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com');
         } else {
           setEmailError('');
         }
@@ -82,9 +84,11 @@ export default function BookingForm({
     }
 
     const cleanEmail = formData.email.trim().toLowerCase();
-    const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || cleanEmail.endsWith('@mapua.edu.ph');
+    const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || 
+                         cleanEmail.endsWith('@mapua.edu.ph') || 
+                         cleanEmail.endsWith('@gmail.com');
     if (!isValidEmail) {
-      setEmailError('Email must be an official Mapúa account ending in @mymail.mapua.edu.ph or @mapua.edu.ph');
+      setEmailError('Email must be from @mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com');
       return;
     }
 
@@ -345,11 +349,13 @@ export default function BookingForm({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <label className="form-label" htmlFor="email" style={{ margin: 0 }}>
               <Mail size={14} color="var(--mapua-crimson)" />
-              <span>Mapúa Email (@mymail.mapua.edu.ph or @mapua.edu.ph)</span>
+              <span>Email Address</span>
             </label>
-            {(formData.email.trim().toLowerCase().endsWith('@mymail.mapua.edu.ph') || formData.email.trim().toLowerCase().endsWith('@mapua.edu.ph')) && (
+            {(formData.email.trim().toLowerCase().endsWith('@mymail.mapua.edu.ph') || 
+              formData.email.trim().toLowerCase().endsWith('@mapua.edu.ph') || 
+              formData.email.trim().toLowerCase().endsWith('@gmail.com')) && (
               <span style={{ fontSize: '0.72rem', color: 'var(--status-available-text)', fontWeight: 600 }}>
-                ✓ Valid Mapúa Email
+                ✓ Valid Email
               </span>
             )}
           </div>
@@ -360,13 +366,13 @@ export default function BookingForm({
               name="email"
               type="email"
               required
-              placeholder="e.g. jddelacruz@mymail.mapua.edu.ph or faculty@mapua.edu.ph"
+              placeholder="e.g. student@mymail.mapua.edu.ph, faculty@mapua.edu.ph, or user@gmail.com"
               value={formData.email}
               onChange={handleChange}
               className="form-input"
               autoComplete="email"
-              pattern="^[a-zA-Z0-9._%+-]+@(mymail\.)?mapua\.edu\.ph$"
-              title="Must be an official Mapúa email ending in @mymail.mapua.edu.ph or @mapua.edu.ph"
+              pattern="^[a-zA-Z0-9._%+-]+@((mymail\.)?mapua\.edu\.ph|gmail\.com)$"
+              title="Must be an email ending in @mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com"
               style={{
                 borderColor: emailError ? 'var(--status-booked-border)' : undefined
               }}
@@ -379,7 +385,7 @@ export default function BookingForm({
             </div>
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Accepted domains: <strong>@mymail.mapua.edu.ph</strong> (Student) or <strong>@mapua.edu.ph</strong> (Faculty/Staff).
+              Accepted domains: <strong>@mymail.mapua.edu.ph</strong>, <strong>@mapua.edu.ph</strong>, or <strong>@gmail.com</strong>.
             </div>
           )}
         </div>
