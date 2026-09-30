@@ -93,12 +93,13 @@ export async function submitBooking(bookingPayload) {
     };
   }
 
-  // Validate official Mapúa student email
+  // Validate official Mapúa email
   const cleanEmail = String(email || '').trim().toLowerCase();
-  if (!cleanEmail.endsWith('@mymail.mapua.edu.ph')) {
+  const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || cleanEmail.endsWith('@mapua.edu.ph');
+  if (!isValidEmail) {
     return {
       success: false,
-      error: 'Invalid student email. Must be an official Mapúa account ending with @mymail.mapua.edu.ph'
+      error: 'Invalid email. Must be an official Mapúa account ending with @mymail.mapua.edu.ph or @mapua.edu.ph'
     };
   }
 

@@ -47,8 +47,9 @@ export default function BookingForm({
 
       if (emailVal.includes('@')) {
         const lower = emailVal.toLowerCase();
-        if (!lower.endsWith('@mymail.mapua.edu.ph')) {
-          setEmailError('Must be an official Mapúa student email ending in @mymail.mapua.edu.ph');
+        const isValid = lower.endsWith('@mymail.mapua.edu.ph') || lower.endsWith('@mapua.edu.ph');
+        if (!isValid) {
+          setEmailError('Must be an official Mapúa email ending in @mymail.mapua.edu.ph or @mapua.edu.ph');
         } else {
           setEmailError('');
         }
@@ -81,8 +82,9 @@ export default function BookingForm({
     }
 
     const cleanEmail = formData.email.trim().toLowerCase();
-    if (!cleanEmail.endsWith('@mymail.mapua.edu.ph')) {
-      setEmailError('Email must be an official Mapúa student account ending in @mymail.mapua.edu.ph');
+    const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || cleanEmail.endsWith('@mapua.edu.ph');
+    if (!isValidEmail) {
+      setEmailError('Email must be an official Mapúa account ending in @mymail.mapua.edu.ph or @mapua.edu.ph');
       return;
     }
 
@@ -343,9 +345,9 @@ export default function BookingForm({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <label className="form-label" htmlFor="email" style={{ margin: 0 }}>
               <Mail size={14} color="var(--mapua-crimson)" />
-              <span>Student Email (@mymail.mapua.edu.ph)</span>
+              <span>Mapúa Email (@mymail.mapua.edu.ph or @mapua.edu.ph)</span>
             </label>
-            {formData.email.trim().toLowerCase().endsWith('@mymail.mapua.edu.ph') && (
+            {(formData.email.trim().toLowerCase().endsWith('@mymail.mapua.edu.ph') || formData.email.trim().toLowerCase().endsWith('@mapua.edu.ph')) && (
               <span style={{ fontSize: '0.72rem', color: 'var(--status-available-text)', fontWeight: 600 }}>
                 ✓ Valid Mapúa Email
               </span>
@@ -358,13 +360,13 @@ export default function BookingForm({
               name="email"
               type="email"
               required
-              placeholder="e.g. jddelacruz@mymail.mapua.edu.ph"
+              placeholder="e.g. jddelacruz@mymail.mapua.edu.ph or faculty@mapua.edu.ph"
               value={formData.email}
               onChange={handleChange}
               className="form-input"
               autoComplete="email"
-              pattern="^[a-zA-Z0-9._%+-]+@mymail\.mapua\.edu\.ph$"
-              title="Must be an official Mapúa student email ending in @mymail.mapua.edu.ph"
+              pattern="^[a-zA-Z0-9._%+-]+@(mymail\.)?mapua\.edu\.ph$"
+              title="Must be an official Mapúa email ending in @mymail.mapua.edu.ph or @mapua.edu.ph"
               style={{
                 borderColor: emailError ? 'var(--status-booked-border)' : undefined
               }}
@@ -377,7 +379,7 @@ export default function BookingForm({
             </div>
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Only official student accounts ending with <strong>@mymail.mapua.edu.ph</strong> are accepted.
+              Accepted domains: <strong>@mymail.mapua.edu.ph</strong> (Student) or <strong>@mapua.edu.ph</strong> (Faculty/Staff).
             </div>
           )}
         </div>
