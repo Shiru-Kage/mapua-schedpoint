@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { RotateCcw, Search, X, AlertTriangle, CheckCircle2, Clock, Calendar, User, Hash } from 'lucide-react';
+import { RotateCcw, Search, X, AlertTriangle, CheckCircle2, Clock, Calendar, User, Hash, Mail } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function StudentRetractModal({ isOpen, onClose, bookings, onRetract }) {
   const [studentIdInput, setStudentIdInput] = useState('');
   const [searched, setSearched] = useState(false);
   const [isRetracting, setIsRetracting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [retractedReceipt, setRetractedReceipt] = useState(null);
 
   if (!isOpen) return null;
 
@@ -21,18 +21,26 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
   const handleSearch = (e) => {
     e.preventDefault();
     setSearched(true);
-    setSuccessMessage('');
+    setRetractedReceipt(null);
   };
 
-  const handleConfirmRetract = async (slotId, timeDisplay) => {
-    if (!window.confirm(`Are you sure you want to retract your reservation for ${timeDisplay}? This will release the slot so other students can take it.`)) {
+  const handleConfirmRetract = async (booking) => {
+    if (!window.confirm(`Are you sure you want to retract your reservation for ${booking.timeDisplay}? This will release the slot and dispatch an automated cancellation email to ${booking.email}.`)) {
       return;
     }
 
     setIsRetracting(true);
     try {
-      await onRetract(slotId);
-      setSuccessMessage(`Reservation for ${timeDisplay} has been successfully cancelled and reopened for other students.`);
+      await onRetract(booking.slotId, booking);
+      setRetractedReceipt({
+        fullName: booking.fullName,
+        studentNumber: booking.studentNumber,
+        timeDisplay: booking.timeDisplay,
+        date: booking.date,
+        email: booking.email,
+        id: booking.id,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
       setSearched(false);
       setStudentIdInput('');
     } catch (err) {
@@ -78,21 +86,43 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
             Need to change your time or can no longer attend? Enter your <strong>Student Number</strong> or <strong>Reference ID</strong> to locate and release your slot for your peers.
           </p>
 
-          {/* Success Banner */}
-          {successMessage && (
+          {/* Retraction & Email Confirmation Card */}
+          {retractedReceipt && (
             <div style={{
-              background: 'var(--status-available-bg)',
-              border: '1px solid var(--status-available-border)',
+              background: '#F0FDF4',
+              border: '1px solid #86EFAC',
               borderRadius: 'var(--radius-md)',
-              padding: '12px 14px',
-              marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
+              padding: '16px',
+              marginBottom: '18px'
             }}>
-              <CheckCircle2 size={18} color="var(--status-available-text)" />
-              <div style={{ fontSize: '0.8125rem', color: 'var(--status-available-text)', fontWeight: 600 }}>
-                {successMessage}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <CheckCircle2 size={18} color="#15803D" />
+                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#166534' }}>
+                  Reservation Retracted & Slot Reopened!
+                </span>
+              </div>
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #BBF7D0',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px',
+                fontSize: '0.8125rem',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: 600 }}>
+                  <Mail size={15} color="#15803D" />
+                  <span>Confirmation email dispatched to:</span>
+                </div>
+                <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#0F172A', paddingLeft: '21px' }}>
+                  {retractedReceipt.email}
+                </div>
+                <div style={{ borderTop: '1px dashed #E2E8F0', marginTop: '6px', paddingTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <div><strong>Student:</strong> {retractedReceipt.fullName} ({retractedReceipt.studentNumber})</div>
+                  <div><strong>Released Schedule:</strong> {retractedReceipt.timeDisplay} • {getFormattedDateLabel(retractedReceipt.date)}</div>
+                </div>
               </div>
             </div>
           )}
@@ -186,12 +216,12 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                       <button
                         type="button"
                         disabled={isRetracting}
-                        onClick={() => handleConfirmRetract(b.slotId, b.timeDisplay)}
+                        onClick={() => handleConfirmRetract(b)}
                         className="btn btn-outline-danger"
                         style={{ width: '100%', fontSize: '0.8125rem', padding: '8px' }}
                       >
                         <RotateCcw size={14} />
-                        <span>Cancel & Retract This Reservation</span>
+                        <span>{isRetracting ? 'Retracting & Dispatching Email...' : 'Cancel & Retract This Reservation'}</span>
                       </button>
                     </div>
                   ))}

@@ -145,8 +145,8 @@ export default function AdminDashboard({
   };
 
   const handleRemoveStudent = (booking) => {
-    if (window.confirm(`Are you sure you want to remove student ${booking.fullName} (ID: ${booking.studentNumber}) from ${booking.timeDisplay} on ${getFormattedDateLabel(booking.date)}? This will immediately reopen the slot for other students.`)) {
-      onCancelBooking(booking.slotId);
+    if (window.confirm(`Are you sure you want to remove student ${booking.fullName} (ID: ${booking.studentNumber}) from ${booking.timeDisplay} on ${getFormattedDateLabel(booking.date)}? This will immediately reopen the slot and send an automated cancellation confirmation email to ${booking.email}.`)) {
+      onCancelBooking(booking.slotId, booking);
     }
   };
 

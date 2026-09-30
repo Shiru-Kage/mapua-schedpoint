@@ -15,6 +15,7 @@ import {
   subscribeToBookings 
 } from './services/bookingStorage';
 import { getFirebaseDb } from './services/firebase';
+import { sendRetractionEmail } from './services/emailService';
 
 function getTodayString() {
   const now = new Date();
@@ -126,11 +127,21 @@ export default function App() {
   };
 
   // Instructor or student slot release/retraction handler
-  const handleCancelBooking = async (slotId) => {
+  const handleCancelBooking = async (slotId, bookingData = null) => {
     setIsCancelling(true);
     try {
+      const targetBooking = bookingData || bookings.find(b => b.slotId === slotId);
       await cancelBooking(slotId);
       setBookings(prev => prev.filter(b => b.slotId !== slotId));
+
+      // Dispatch automated confirmation email if student email is present
+      if (targetBooking && targetBooking.email) {
+        try {
+          await sendRetractionEmail(targetBooking);
+        } catch (emailErr) {
+          console.warn('Retraction email warning:', emailErr);
+        }
+      }
     } catch (err) {
       alert('Failed to release slot: ' + err.message);
     } finally {
