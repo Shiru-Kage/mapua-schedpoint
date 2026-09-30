@@ -12,15 +12,23 @@ import {
 
 const STORAGE_KEY = 'mapua_scheduler_firebase_config';
 
+export const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCkZSiWHLb8qrzUAiocgrijAaQ5dujYJWo",
+  authDomain: "mapua-schedpoint.firebaseapp.com",
+  projectId: "mapua-schedpoint",
+  storageBucket: "mapua-schedpoint.firebasestorage.app",
+  messagingSenderId: "670467479029",
+  appId: "1:670467479029:web:5a91bb3e3cd85ca51bbcbc"
+};
+
 export function getSavedFirebaseConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    if (raw) return JSON.parse(raw);
   } catch (e) {
     console.error('Error reading Firebase config from localStorage:', e);
-    return null;
   }
+  return DEFAULT_FIREBASE_CONFIG;
 }
 
 export function saveFirebaseConfig(config) {

@@ -1,5 +1,5 @@
 // Unified booking storage and synchronization layer
-import { getFirebaseDb, collection, doc, setDoc, deleteDoc, onSnapshot } from './firebase';
+import { getFirebaseDb, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from './firebase';
 
 const LOCAL_STORAGE_KEY = 'mapua_student_scheduler_bookings';
 const CHANNEL_NAME = 'mapua_scheduler_channel';
@@ -40,7 +40,15 @@ export async function fetchAllBookings() {
   // 1. Check if Firebase is active
   const db = getFirebaseDb();
   if (db) {
-    // Handled primarily via real-time subscription
+    try {
+      const snap = await getDocs(collection(db, 'bookings'));
+      const list = [];
+      snap.forEach(d => list.push(d.data()));
+      saveLocalBookings(list);
+      return list;
+    } catch (e) {
+      console.warn('Failed to fetch from Firestore:', e);
+    }
   }
 
   // 2. Try Backend API
@@ -76,12 +84,35 @@ export async function submitBooking(bookingPayload) {
     createdAt: new Date().toISOString(),
   };
 
+  // Pre-submission validation against current booking pool
+  const current = getLocalBookings();
+  const existingSlot = current.find(b => b.slotId === slotId);
+  if (existingSlot) {
+    return {
+      success: false,
+      error: `Slot (${timeDisplay}) has already been reserved! Please select a different schedule.`
+    };
+  }
+
+  const cleanStudentNum = String(studentNumber || '').trim().toLowerCase();
+  const existingStudent = current.find(b => 
+    String(b.studentNumber || '').trim().toLowerCase() === cleanStudentNum && b.date === date
+  );
+  if (existingStudent) {
+    return {
+      success: false,
+      error: `Duplicate submission: Student Number "${studentNumber}" already has a reserved slot (${existingStudent.timeDisplay}) on this date. You can retract your existing booking to select a new time.`
+    };
+  }
+
   // 1. Try Firebase Firestore if configured
   const db = getFirebaseDb();
   if (db) {
     try {
       const slotRef = doc(db, 'bookings', slotId);
       await setDoc(slotRef, booking);
+      const updated = [...current.filter(b => b.slotId !== slotId), booking];
+      saveLocalBookings(updated);
       return { success: true, booking };
     } catch (err) {
       console.error('Firebase save error:', err);
