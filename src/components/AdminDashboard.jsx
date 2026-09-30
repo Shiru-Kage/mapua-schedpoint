@@ -7,7 +7,10 @@ import {
   FileSpreadsheet, 
   UserX,
   Calendar,
-  Filter
+  Filter,
+  X,
+  AlertTriangle,
+  Mail
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -23,6 +26,7 @@ export default function AdminDashboard({
   const [filterSession, setFilterSession] = useState('all');
   // Default to 'all' so instructor sees ALL reserved schedules across all dates by default
   const [filterDate, setFilterDate] = useState('all');
+  const [studentToRemove, setStudentToRemove] = useState(null);
 
   // Extract unique dates present in bookings for the date filter dropdown
   const uniqueDates = useMemo(() => {
@@ -145,9 +149,7 @@ export default function AdminDashboard({
   };
 
   const handleRemoveStudent = (booking) => {
-    if (window.confirm(`Are you sure you want to remove student ${booking.fullName} (ID: ${booking.studentNumber}) from ${booking.timeDisplay} on ${getFormattedDateLabel(booking.date)}? This will immediately reopen the slot and send an automated cancellation confirmation email to ${booking.email}.`)) {
-      onCancelBooking(booking.slotId, booking);
-    }
+    setStudentToRemove(booking);
   };
 
   return (
@@ -490,6 +492,94 @@ export default function AdminDashboard({
           </table>
         )}
       </div>
+
+      {/* Custom Removal Confirmation Modal */}
+      {studentToRemove && (
+        <div className="modal-overlay" style={{ zIndex: 1200 }}>
+          <div className="modal-content" style={{ maxWidth: '440px' }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserX size={18} color="var(--mapua-crimson)" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  Remove Student Reservation
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStudentToRemove(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
+                Are you sure you want to remove this reservation? The slot will immediately reopen for other students.
+              </p>
+
+              <div style={{
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px 14px',
+                marginBottom: '16px',
+                fontSize: '0.8125rem'
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '0.925rem', color: 'var(--text-primary)' }}>
+                  {studentToRemove.fullName}
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', marginTop: '2px' }}>
+                  ID: {studentToRemove.studentNumber} • {studentToRemove.gender ? `${studentToRemove.gender} • ` : ''}{studentToRemove.course}
+                </div>
+                <div style={{ marginTop: '8px', color: 'var(--mapua-crimson)', fontWeight: 700, fontSize: '0.85rem' }}>
+                  {studentToRemove.timeDisplay} • {getFormattedDateLabel(studentToRemove.date)}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                  <Mail size={12} color="var(--text-muted)" />
+                  <span>Cancellation notice will be sent to: <strong>{studentToRemove.email}</strong></span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setStudentToRemove(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '9px', fontSize: '0.85rem' }}
+                >
+                  Keep Reservation
+                </button>
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={async () => {
+                    const target = studentToRemove;
+                    setStudentToRemove(null);
+                    await onCancelBooking(target.slotId, target);
+                  }}
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '9px',
+                    fontSize: '0.85rem',
+                    background: 'var(--mapua-crimson)',
+                    borderColor: 'var(--mapua-crimson)'
+                  }}
+                >
+                  {isCancelling ? 'Removing...' : 'Confirm Removal'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

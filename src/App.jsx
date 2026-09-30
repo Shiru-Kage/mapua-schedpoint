@@ -131,18 +131,19 @@ export default function App() {
     setIsCancelling(true);
     try {
       const targetBooking = bookingData || bookings.find(b => b.slotId === slotId);
-      await cancelBooking(slotId);
+      // Immediately update UI state so table and calendar update with 0 latency
       setBookings(prev => prev.filter(b => b.slotId !== slotId));
 
-      // Dispatch automated confirmation email if student email is present
+      await cancelBooking(slotId);
+
+      // Dispatch automated confirmation email in background without blocking UI
       if (targetBooking && targetBooking.email) {
-        try {
-          await sendRetractionEmail(targetBooking);
-        } catch (emailErr) {
+        sendRetractionEmail(targetBooking).catch(emailErr => {
           console.warn('Retraction email warning:', emailErr);
-        }
+        });
       }
     } catch (err) {
+      console.error('Failed to release slot:', err);
       alert('Failed to release slot: ' + err.message);
     } finally {
       setIsCancelling(false);

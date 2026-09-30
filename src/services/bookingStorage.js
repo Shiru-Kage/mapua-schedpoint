@@ -191,35 +191,30 @@ export async function submitBooking(bookingPayload) {
 }
 
 export async function cancelBooking(slotId) {
+  // Always update local cache and broadcast immediately so the UI reflects removal with 0 delay
+  const current = getLocalBookings();
+  const updated = current.filter(b => b.slotId !== slotId);
+  saveLocalBookings(updated);
+
   // 1. Firebase Firestore
   const db = getFirebaseDb();
   if (db) {
     try {
       await deleteDoc(doc(db, 'bookings', slotId));
-      return { success: true };
     } catch (e) {
-      return { success: false, error: e.message };
+      console.warn('Firestore delete warning:', e);
     }
   }
 
   // 2. Backend Server API
   try {
-    const res = await fetch(`/api/bookings/${slotId}`, {
+    await fetch(`/api/bookings/${slotId}`, {
       method: 'DELETE',
     });
-    if (res.ok) {
-      const current = getLocalBookings();
-      const updated = current.filter(b => b.slotId !== slotId);
-      saveLocalBookings(updated);
-      return { success: true };
-    }
   } catch {
-    // Local fallback
+    // API not running or static environment
   }
 
-  const current = getLocalBookings();
-  const updated = current.filter(b => b.slotId !== slotId);
-  saveLocalBookings(updated);
   return { success: true };
 }
 
