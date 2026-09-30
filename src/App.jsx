@@ -15,7 +15,7 @@ import {
   subscribeToBookings 
 } from './services/bookingStorage';
 import { getFirebaseDb } from './services/firebase';
-import { sendRetractionEmail } from './services/emailService';
+import { sendRetractionEmail, sendBookingConfirmationEmail } from './services/emailService';
 
 function getTodayString() {
   const now = new Date();
@@ -118,6 +118,10 @@ export default function App() {
       } else {
         setConfirmedBooking(result.booking);
         setSelectedSlot(null);
+        // Automatically dispatch confirmation receipt with Reference Code to student's email
+        sendBookingConfirmationEmail(result.booking).catch(emailErr => {
+          console.warn('Booking confirmation email warning:', emailErr);
+        });
       }
     } catch (err) {
       setErrorMessage(err.message || 'An unexpected error occurred. Please try again.');

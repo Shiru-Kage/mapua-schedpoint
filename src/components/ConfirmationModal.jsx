@@ -105,19 +105,38 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
             marginBottom: '16px'
           }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              REFERENCE ID
+              OFFICIAL REFERENCE CODE
             </span>
             <span style={{
               fontFamily: 'var(--font-mono)',
               fontWeight: 700,
               fontSize: '0.875rem',
-              color: 'var(--text-primary)',
-              background: 'var(--bg-subtle)',
-              padding: '2px 8px',
+              color: 'var(--mapua-crimson)',
+              background: 'var(--mapua-crimson-subtle)',
+              padding: '3px 10px',
               borderRadius: '4px',
-              border: '1px solid var(--border-light)'
+              border: '1px solid var(--mapua-crimson-border)'
             }}>
               {booking.id}
+            </span>
+          </div>
+
+          {/* Reference Email Notice */}
+          <div style={{
+            fontSize: '0.75rem',
+            color: 'var(--status-available-text)',
+            background: 'var(--status-available-bg)',
+            border: '1px solid var(--status-available-border)',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <CheckCircle2 size={16} color="var(--status-available-text)" style={{ flexShrink: 0 }} />
+            <span>
+              Reference Code sent to <strong>{booking.email}</strong>. Use this code if you ever need to retract your schedule.
             </span>
           </div>
 

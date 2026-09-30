@@ -101,3 +101,76 @@ export async function sendRetractionEmail(booking) {
     };
   }
 }
+
+/**
+ * Sends an automated confirmation receipt with the official Reference Number/Code
+ * directly to the student's email upon booking reservation.
+ * 
+ * @param {Object} booking - The newly confirmed booking object
+ * @returns {Promise<{success: boolean, email?: string, referenceCode?: string, error?: string}>}
+ */
+export async function sendBookingConfirmationEmail(booking) {
+  if (!booking) {
+    return { success: false, error: 'No booking details provided.' };
+  }
+
+  const recipientEmail = (booking.email || '').trim();
+  if (!recipientEmail) {
+    return { success: false, error: 'Student email is missing from reservation.' };
+  }
+
+  const referenceCode = booking.id;
+  const now = new Date();
+  const timestampFormatted = now.toLocaleString('en-US', {
+    timeZone: 'Asia/Manila',
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+
+  try {
+    const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipientEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: `[Mapúa SchedPoint] Reservation Confirmed — Reference Code: ${referenceCode}`,
+        _template: 'box',
+        _captcha: 'false',
+        _replyto: 'noreply-schedpoint@mapua.edu.ph',
+        "OFFICIAL REFERENCE CODE": referenceCode,
+        "Student Name": booking.fullName,
+        "Student Number": booking.studentNumber,
+        "Gender": booking.gender || 'Not specified',
+        "Course & Section": booking.course,
+        "Reserved Slot Time": booking.timeDisplay,
+        "Scheduled Consultation Date": booking.date,
+        "Confirmation Timestamp": `${timestampFormatted} (PHT)`,
+        "Status": "CONFIRMED & LOCKED IN",
+        "RETRACTION INSTRUCTION": `Keep this email safe! If you need to retract or cancel this reservation to choose another time, enter your Reference Code (${referenceCode}) at: https://shiru-kage.github.io/mapua-schedpoint/`
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.warn('Booking confirmation email response warning:', text);
+    }
+
+    return {
+      success: true,
+      email: recipientEmail,
+      referenceCode,
+      timestamp: timestampFormatted
+    };
+  } catch (err) {
+    console.error('Booking confirmation email dispatch error:', err);
+    return {
+      success: false,
+      error: err.message,
+      email: recipientEmail,
+      referenceCode
+    };
+  }
+}
+

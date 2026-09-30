@@ -3,18 +3,19 @@ import { RotateCcw, Search, X, AlertTriangle, CheckCircle2, Clock, Calendar, Use
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function StudentRetractModal({ isOpen, onClose, bookings, onRetract }) {
-  const [studentIdInput, setStudentIdInput] = useState('');
+  const [refQueryInput, setRefQueryInput] = useState('');
   const [searched, setSearched] = useState(false);
   const [isRetracting, setIsRetracting] = useState(false);
   const [retractedReceipt, setRetractedReceipt] = useState(null);
 
   if (!isOpen) return null;
 
-  const cleanQuery = studentIdInput.trim().toLowerCase();
+  const cleanQuery = refQueryInput.trim().toLowerCase();
   const matchedBookings = cleanQuery
     ? bookings.filter(b => 
-        String(b.studentNumber || '').trim().toLowerCase() === cleanQuery ||
-        String(b.id || '').trim().toLowerCase() === cleanQuery
+        String(b.id || '').trim().toLowerCase() === cleanQuery ||
+        String(b.referenceCode || '').trim().toLowerCase() === cleanQuery ||
+        String(b.studentNumber || '').trim().toLowerCase() === cleanQuery
       )
     : [];
 
@@ -42,7 +43,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       setSearched(false);
-      setStudentIdInput('');
+      setRefQueryInput('');
     } catch (err) {
       alert('Failed to retract reservation: ' + err.message);
     } finally {
@@ -83,7 +84,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
 
         <div style={{ padding: '20px' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
-            Need to change your time or can no longer attend? Enter your <strong>Student Number</strong> or <strong>Reference ID</strong> to locate and release your slot for your peers.
+            Need to change your time or can no longer attend? Enter the <strong>Reference Code</strong> sent to your email (or your Student Number) to locate and release your slot.
           </p>
 
           {/* Retraction & Email Confirmation Card */}
@@ -114,7 +115,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: 600 }}>
                   <Mail size={15} color="#15803D" />
-                  <span>Confirmation email dispatched to:</span>
+                  <span>Cancellation receipt dispatched to:</span>
                 </div>
                 <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#0F172A', paddingLeft: '21px' }}>
                   {retractedReceipt.email}
@@ -122,36 +123,36 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                 <div style={{ borderTop: '1px dashed #E2E8F0', marginTop: '6px', paddingTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   <div><strong>Student:</strong> {retractedReceipt.fullName} ({retractedReceipt.studentNumber})</div>
                   <div><strong>Released Schedule:</strong> {retractedReceipt.timeDisplay} • {getFormattedDateLabel(retractedReceipt.date)}</div>
+                  <div><strong>Reference ID:</strong> {retractedReceipt.id}</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Search Form */}
+          {/* Search Form with Reference Code */}
           <form onSubmit={handleSearch} style={{ marginBottom: '18px' }}>
             <div className="input-container" style={{ marginBottom: '10px' }}>
               <Search size={16} className="input-icon" />
               <input
                 type="text"
                 autoFocus
-                maxLength={10}
-                placeholder="Enter 10-digit Student Number (e.g. 2023123456)"
-                value={studentIdInput}
+                placeholder="Enter Reference Code (e.g. BKG-...) or Student #"
+                value={refQueryInput}
                 onChange={(e) => {
-                  setStudentIdInput(e.target.value.replace(/\D/g, '').slice(0, 10));
+                  setRefQueryInput(e.target.value);
                   setSearched(false);
                 }}
                 className="form-input"
-                style={{ paddingLeft: '38px', fontFamily: 'var(--font-mono)' }}
+                style={{ paddingLeft: '38px', fontFamily: 'var(--font-mono)', letterSpacing: '0.02em' }}
               />
             </div>
             <button
               type="submit"
-              disabled={!studentIdInput.trim()}
+              disabled={!refQueryInput.trim()}
               className="btn btn-primary"
-              style={{ width: '100%', padding: '9px' }}
+              style={{ width: '100%', padding: '10px' }}
             >
-              Find My Active Booking
+              Locate Reservation via Reference Code
             </button>
           </form>
 
@@ -167,7 +168,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                   fontSize: '0.8125rem',
                   color: 'var(--text-muted)'
                 }}>
-                  No active reservations found for student number: <strong>{studentIdInput}</strong>.
+                  No active reservations found matching code: <strong>{refQueryInput}</strong>. Please check the confirmation email sent to you upon booking.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -190,9 +191,14 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                             ID: {b.studentNumber} • {b.gender ? `${b.gender} • ` : ''}{b.course}
                           </div>
                         </div>
-                        <span className="badge badge-booked">
-                          Reserved
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                          <span className="badge badge-booked">
+                            Reserved
+                          </span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-disabled)' }}>
+                            {b.id}
+                          </span>
+                        </div>
                       </div>
 
                       <div style={{
