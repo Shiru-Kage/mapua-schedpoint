@@ -1,0 +1,36 @@
+[
+  {
+    "id": "BKG-MUNEF1NT-3803",
+    "slotId": "2026-10-01_0700",
+    "date": "2026-10-01",
+    "timeDisplay": "7:00 AM – 7:10 AM",
+    "fullName": "Santos, Maria Patricia",
+    "studentNumber": "2023101234",
+    "course": "BSIT - IT101 / A2",
+    "email": "mpsantos@mymail.mapua.edu.ph",
+    "createdAt": "2026-09-30T01:00:18.857Z"
+  },
+  {
+    "id": "BKG-MUNEHBVP-8511",
+    "slotId": "2026-09-30_0700",
+    "date": "2026-09-30",
+    "timeDisplay": "7:00 AM – 7:10 AM",
+    "fullName": "Dela Cruz, Juan M.",
+    "studentNumber": "2022104592",
+    "course": "BSCS - CS121 / A1",
+    "email": "jddelacruz@mymail.mapua.edu.ph",
+    "createdAt": "2026-09-30T01:02:05.413Z"
+  },
+  {
+    "id": "BKG-MUNFJP3F-2627",
+    "slotId": "2026-09-30_0710",
+    "date": "2026-09-30",
+    "timeDisplay": "7:10 AM – 7:20 AM",
+    "fullName": "Maria Santos",
+    "studentNumber": "2023198765",
+    "gender": "Female",
+    "course": "BSCS - CS102",
+    "email": "msantos@mymail.mapua.edu.ph",
+    "createdAt": "2026-09-30T01:31:55.467Z"
+  }
+]
