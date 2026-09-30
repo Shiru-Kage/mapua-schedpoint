@@ -20,6 +20,7 @@ export default function BookingForm({
     email: '',
   });
   const [studentNumError, setStudentNumError] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const handleChange = (e) => {
     if (errorMessage) clearError();
@@ -36,6 +37,23 @@ export default function BookingForm({
         setStudentNumError(`10 digits required (${digitsOnly.length}/10 digits entered)`);
       } else {
         setStudentNumError('');
+      }
+      return;
+    }
+
+    if (name === 'email') {
+      const emailVal = value.trim();
+      setFormData(prev => ({ ...prev, [name]: value }));
+
+      if (emailVal.includes('@')) {
+        const lower = emailVal.toLowerCase();
+        if (!lower.endsWith('@mymail.mapua.edu.ph')) {
+          setEmailError('Must be an official Mapúa student email ending in @mymail.mapua.edu.ph');
+        } else {
+          setEmailError('');
+        }
+      } else {
+        setEmailError('');
       }
       return;
     }
@@ -59,6 +77,12 @@ export default function BookingForm({
     const cleanNum = formData.studentNumber.trim();
     if (!/^202\d{7}$/.test(cleanNum)) {
       setStudentNumError('Student number must be exactly 10 digits starting with 202x (e.g. 2023123456).');
+      return;
+    }
+
+    const cleanEmail = formData.email.trim().toLowerCase();
+    if (!cleanEmail.endsWith('@mymail.mapua.edu.ph')) {
+      setEmailError('Email must be an official Mapúa student account ending in @mymail.mapua.edu.ph');
       return;
     }
 
@@ -316,10 +340,17 @@ export default function BookingForm({
 
         {/* Student Email */}
         <div className="form-group">
-          <label className="form-label" htmlFor="email">
-            <Mail size={14} color="var(--mapua-crimson)" />
-            <span>Student Email</span>
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label className="form-label" htmlFor="email" style={{ margin: 0 }}>
+              <Mail size={14} color="var(--mapua-crimson)" />
+              <span>Student Email (@mymail.mapua.edu.ph)</span>
+            </label>
+            {formData.email.trim().toLowerCase().endsWith('@mymail.mapua.edu.ph') && (
+              <span style={{ fontSize: '0.72rem', color: 'var(--status-available-text)', fontWeight: 600 }}>
+                ✓ Valid Mapúa Email
+              </span>
+            )}
+          </div>
           <div className="input-container">
             <Mail size={15} className="input-icon" />
             <input
@@ -332,8 +363,23 @@ export default function BookingForm({
               onChange={handleChange}
               className="form-input"
               autoComplete="email"
+              pattern="^[a-zA-Z0-9._%+-]+@mymail\.mapua\.edu\.ph$"
+              title="Must be an official Mapúa student email ending in @mymail.mapua.edu.ph"
+              style={{
+                borderColor: emailError ? 'var(--status-booked-border)' : undefined
+              }}
             />
           </div>
+          {emailError ? (
+            <div style={{ fontSize: '0.72rem', color: 'var(--mapua-crimson)', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+              <AlertCircle size={12} />
+              <span>{emailError}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Only official student accounts ending with <strong>@mymail.mapua.edu.ph</strong> are accepted.
+            </div>
+          )}
         </div>
 
         {/* Submit */}

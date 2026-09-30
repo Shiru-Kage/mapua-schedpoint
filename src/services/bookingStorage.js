@@ -93,6 +93,15 @@ export async function submitBooking(bookingPayload) {
     };
   }
 
+  // Validate official Mapúa student email
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail.endsWith('@mymail.mapua.edu.ph')) {
+    return {
+      success: false,
+      error: 'Invalid student email. Must be an official Mapúa account ending with @mymail.mapua.edu.ph'
+    };
+  }
+
   // Pre-submission validation against current booking pool
   const current = getLocalBookings();
   const existingSlot = current.find(b => b.slotId === slotId);
