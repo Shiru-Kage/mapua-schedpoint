@@ -19,10 +19,27 @@ export default function BookingForm({
     course: '',
     email: '',
   });
+  const [studentNumError, setStudentNumError] = useState('');
 
   const handleChange = (e) => {
     if (errorMessage) clearError();
     const { name, value } = e.target;
+
+    if (name === 'studentNumber') {
+      // Only permit numeric digits and cap at exactly 10 digits
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+
+      if (digitsOnly.length > 0 && !digitsOnly.startsWith('202')) {
+        setStudentNumError('Student number must start with 202x (e.g. 2023...)');
+      } else if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+        setStudentNumError(`10 digits required (${digitsOnly.length}/10 digits entered)`);
+      } else {
+        setStudentNumError('');
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -38,6 +55,13 @@ export default function BookingForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedSlot || duplicateBooking) return;
+
+    const cleanNum = formData.studentNumber.trim();
+    if (!/^202\d{7}$/.test(cleanNum)) {
+      setStudentNumError('Student number must be exactly 10 digits starting with 202x (e.g. 2023123456).');
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -196,25 +220,52 @@ export default function BookingForm({
 
         {/* Student Number */}
         <div className="form-group">
-          <label className="form-label" htmlFor="studentNumber">
-            <Hash size={14} color="var(--mapua-crimson)" />
-            <span>Student Number</span>
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label className="form-label" htmlFor="studentNumber" style={{ margin: 0 }}>
+              <Hash size={14} color="var(--mapua-crimson)" />
+              <span>Student Number</span>
+            </label>
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: formData.studentNumber.length === 10 ? 'var(--status-available-text)' : 'var(--text-muted)',
+              fontFamily: 'var(--font-mono)'
+            }}>
+              {formData.studentNumber.length}/10 digits
+            </span>
+          </div>
           <div className="input-container">
             <Hash size={15} className="input-icon" />
             <input
               id="studentNumber"
               name="studentNumber"
               type="text"
+              inputMode="numeric"
+              maxLength={10}
               required
-              placeholder="e.g. 2022104592"
+              placeholder="e.g. 2023123456"
               value={formData.studentNumber}
               onChange={handleChange}
               className="form-input"
-              pattern="^[0-9\-_]{6,15}$"
-              title="Please enter a valid student number (e.g. 2022104592)"
+              pattern="^202[0-9]{7}$"
+              title="Student number must be exactly 10 digits starting with 202x (e.g. 2023123456)"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.04em',
+                borderColor: studentNumError ? 'var(--status-booked-border)' : undefined
+              }}
             />
           </div>
+          {studentNumError ? (
+            <div style={{ fontSize: '0.72rem', color: 'var(--mapua-crimson)', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+              <AlertCircle size={12} />
+              <span>{studentNumError}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Must be exactly 10 digits starting with batch <strong>202x</strong> (e.g. 2020xxxxxx to 2026xxxxxx).
+            </div>
+          )}
         </div>
 
         {/* Gender Selection */}

@@ -134,14 +134,15 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
               <input
                 type="text"
                 autoFocus
-                placeholder="Enter Student Number (e.g. 2022104592)"
+                maxLength={10}
+                placeholder="Enter 10-digit Student Number (e.g. 2023123456)"
                 value={studentIdInput}
                 onChange={(e) => {
-                  setStudentIdInput(e.target.value);
+                  setStudentIdInput(e.target.value.replace(/\D/g, '').slice(0, 10));
                   setSearched(false);
                 }}
                 className="form-input"
-                style={{ paddingLeft: '38px' }}
+                style={{ paddingLeft: '38px', fontFamily: 'var(--font-mono)' }}
               />
             </div>
             <button

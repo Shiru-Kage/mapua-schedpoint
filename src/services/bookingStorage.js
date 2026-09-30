@@ -84,6 +84,15 @@ export async function submitBooking(bookingPayload) {
     createdAt: new Date().toISOString(),
   };
 
+  // Validate 10-digit Mapúa student number template starting with 202x
+  const cleanStudentNum = String(studentNumber || '').trim();
+  if (!/^202\d{7}$/.test(cleanStudentNum)) {
+    return {
+      success: false,
+      error: 'Student Number must be exactly 10 digits starting with 202x (e.g. 2023123456).'
+    };
+  }
+
   // Pre-submission validation against current booking pool
   const current = getLocalBookings();
   const existingSlot = current.find(b => b.slotId === slotId);
@@ -94,9 +103,8 @@ export async function submitBooking(bookingPayload) {
     };
   }
 
-  const cleanStudentNum = String(studentNumber || '').trim().toLowerCase();
   const existingStudent = current.find(b => 
-    String(b.studentNumber || '').trim().toLowerCase() === cleanStudentNum && b.date === date
+    String(b.studentNumber || '').trim().toLowerCase() === cleanStudentNum.toLowerCase() && b.date === date
   );
   if (existingStudent) {
     return {
