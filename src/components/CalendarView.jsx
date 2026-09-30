@@ -280,30 +280,32 @@ export default function CalendarView({
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '12px',
-        padding: '10px 14px',
+        gap: '10px',
+        padding: '10px 12px',
         background: 'var(--bg-subtle)',
         borderRadius: 'var(--radius-md)',
-        marginBottom: '20px',
+        marginBottom: '16px',
         border: '1px solid var(--border-light)'
       }}>
-        <div className="segmented-control">
+        <div className="segmented-control" style={{ flex: '1 1 auto' }}>
           <button
             type="button"
             onClick={() => setSessionFilter('morning')}
             className={`segmented-control-item ${sessionFilter === 'morning' ? 'active' : ''}`}
+            title="Morning (7:00 – 11:00 AM)"
           >
             <Sun size={14} />
-            <span>Morning (7:00 – 11:00 AM)</span>
+            <span>Morning (7–11 AM)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSessionFilter('afternoon')}
             className={`segmented-control-item ${sessionFilter === 'afternoon' ? 'active' : ''}`}
+            title="Afternoon (1:00 – 4:00 PM)"
           >
             <Sunset size={14} />
-            <span>Afternoon (1:00 – 4:00 PM)</span>
+            <span>Afternoon (1–4 PM)</span>
           </button>
 
           <button
@@ -311,12 +313,12 @@ export default function CalendarView({
             onClick={() => setSessionFilter('all')}
             className={`segmented-control-item ${sessionFilter === 'all' ? 'active' : ''}`}
           >
-            <span>All Sessions</span>
+            <span>All</span>
           </button>
         </div>
 
         {/* High-Contrast Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <span className="badge badge-available">
             {availableCount} Available
           </span>
@@ -340,6 +342,15 @@ export default function CalendarView({
                 onClick={() => {
                   if (!isBooked) {
                     setSelectedSlot(slot);
+                    // Smoothly scroll to booking form on mobile devices
+                    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+                      setTimeout(() => {
+                        const target = document.getElementById('student-booking-form-section');
+                        if (target) {
+                          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }, 50);
+                    }
                   }
                 }}
                 className={`timeline-slot-row ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
@@ -352,7 +363,7 @@ export default function CalendarView({
                 </div>
 
                 {/* Status Column */}
-                <div>
+                <div className="timeline-slot-status">
                   {isBooked ? (
                     <div style={{
                       display: 'inline-flex',
@@ -364,10 +375,14 @@ export default function CalendarView({
                       padding: '4px 10px',
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: 'var(--status-booked-text)'
+                      color: 'var(--status-booked-text)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
-                      <Lock size={13} />
-                      <span>Reserved by Student ({booking.course || 'Closed'})</span>
+                      <Lock size={13} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        Reserved by Student ({booking.course || 'Closed'})
+                      </span>
                     </div>
                   ) : isSelected ? (
                     <div style={{
@@ -379,9 +394,11 @@ export default function CalendarView({
                       borderRadius: '4px',
                       padding: '4px 10px',
                       fontSize: '0.8125rem',
-                      fontWeight: 700
+                      fontWeight: 700,
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
-                      <CheckCircle2 size={14} />
+                      <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
                       <span>Selected Schedule (10 Minutes)</span>
                     </div>
                   ) : (
@@ -395,26 +412,28 @@ export default function CalendarView({
                       padding: '4px 10px',
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: 'var(--status-available-text)'
+                      color: 'var(--status-available-text)',
+                      width: '100%',
+                      boxSizing: 'border-box'
                     }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669' }}></span>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', flexShrink: 0 }}></span>
                       <span>Available for Consultation</span>
                     </div>
                   )}
                 </div>
 
                 {/* Action CTA */}
-                <div>
+                <div className="timeline-slot-action">
                   {isBooked ? (
                     <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-disabled)' }}>
                       Slot Taken
                     </span>
                   ) : isSelected ? (
                     <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
-                      Active
+                      Active ✓
                     </span>
                   ) : (
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--mapua-crimson)' }}>
+                    <span className="timeline-slot-cta-btn" style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--mapua-crimson)' }}>
                       Select →
                     </span>
                   )}

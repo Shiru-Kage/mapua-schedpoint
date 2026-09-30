@@ -12,63 +12,77 @@ export default function Navbar({
   setTheme
 }) {
   return (
-    <header style={{
-      borderBottom: '1px solid var(--border-light)',
-      background: 'var(--bg-surface)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      padding: '12px 24px',
-      boxShadow: 'var(--shadow-xs)'
-    }}>
-      <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        {/* Brand & Identity */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '8px',
-            background: 'var(--mapua-crimson)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            boxShadow: 'var(--shadow-xs)',
-            flexShrink: 0
-          }}>
-            <Calendar size={20} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ 
-                fontSize: '1.125rem', 
-                fontWeight: 800, 
-                letterSpacing: '-0.02em',
-                color: 'var(--text-primary)',
-                margin: 0
-              }}>
-                Mapúa SchedPoint
-              </h1>
-              <span className="badge badge-gold">
-                Mapúa University
-              </span>
+    <header className="navbar-header">
+      <div className="navbar-container">
+        {/* Mobile Top Bar (Contents on Desktop) */}
+        <div className="navbar-mobile-top-bar">
+          {/* Brand & Identity */}
+          <div className="navbar-brand-section">
+            <div 
+              className="navbar-brand-logo"
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '8px',
+                background: 'var(--mapua-crimson)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: 'var(--shadow-xs)',
+                flexShrink: 0
+              }}
+            >
+              <Calendar size={18} />
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-              10-Minute Consultation & Presentation Scheduler
-            </p>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h1 className="navbar-brand-title" style={{ 
+                  fontSize: '1.05rem', 
+                  fontWeight: 800, 
+                  letterSpacing: '-0.02em',
+                  color: 'var(--text-primary)',
+                  margin: 0
+                }}>
+                  Mapúa SchedPoint
+                </h1>
+                <span className="badge badge-gold" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
+                  Mapúa
+                </span>
+              </div>
+              <p className="navbar-brand-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+                10-Minute Consultation & Presentation Scheduler
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Mobile Actions (Retract button & Theme toggle) */}
+          <div className="navbar-mobile-actions">
+            <button
+              type="button"
+              onClick={openRetractModal}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.75rem', padding: '6px 9px' }}
+              title="Manage or Retract Booking"
+            >
+              <RotateCcw size={13} color="var(--mapua-crimson)" />
+              <span>Manage</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'mapua' ? 'dark' : 'mapua')}
+              className="btn btn-secondary"
+              style={{ padding: '6px 9px' }}
+              title="Toggle Theme"
+            >
+              {theme === 'mapua' ? <Moon size={14} /> : <Sun size={14} color="#f59e0b" />}
+            </button>
           </div>
         </div>
 
-        {/* Right Navigation & Tools */}
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        {/* Right Navigation & Tools (Desktop) */}
+        <div className="navbar-tools-section navbar-desktop-tools">
           {/* Student Retract / Lookup Booking Button */}
           <button
             type="button"
@@ -104,7 +118,7 @@ export default function Navbar({
           </div>
 
           {/* Portal Switch: Student Booking vs Instructor Portal */}
-          <div className="segmented-control">
+          <div className="segmented-control navbar-tab-switch">
             <button
               type="button"
               onClick={() => setCurrentTab('booking')}
@@ -142,6 +156,46 @@ export default function Navbar({
               )}
             </button>
           </div>
+        </div>
+
+        {/* Portal Switch on Mobile (full width row) */}
+        <div className="segmented-control navbar-tab-switch-mobile">
+          <button
+            type="button"
+            onClick={() => setCurrentTab('booking')}
+            className={`segmented-control-item ${currentTab === 'booking' ? 'active' : ''}`}
+          >
+            <Users size={14} />
+            <span>Student Schedule</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (isAdminUnlocked) {
+                setCurrentTab('admin');
+              } else {
+                openAdminModal();
+              }
+            }}
+            className={`segmented-control-item ${currentTab === 'admin' ? 'active' : ''}`}
+          >
+            <Shield size={14} />
+            <span>Instructor Portal</span>
+            {bookingsCount > 0 && (
+              <span style={{
+                background: 'var(--mapua-crimson)',
+                color: '#ffffff',
+                borderRadius: '10px',
+                padding: '1px 6px',
+                fontSize: '0.6875rem',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700
+              }}>
+                {bookingsCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
     </header>

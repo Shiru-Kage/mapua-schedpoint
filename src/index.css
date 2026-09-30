@@ -362,6 +362,61 @@ body {
   text-decoration: line-through;
 }
 
+.timeline-slot-status {
+  display: flex;
+  align-items: center;
+}
+
+.timeline-slot-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Mobile Layout for Timeline Slots */
+@media (max-width: 640px) {
+  .timeline-slot-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 10px;
+    padding: 11px 12px;
+  }
+
+  .timeline-slot-time {
+    order: 1;
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .timeline-slot-action {
+    order: 2;
+  }
+
+  .timeline-slot-status {
+    order: 3;
+    width: 100%;
+  }
+
+  .timeline-slot-status > div {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-start;
+  }
+
+  .timeline-slot-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--mapua-crimson-subtle);
+    border: 1px solid var(--mapua-crimson-border);
+  }
+}
+
 /* Grid Cards View */
 .slots-grid {
   display: grid;
@@ -500,6 +555,282 @@ body {
 @keyframes modalSlideUp {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE SYSTEM (Phones 320px - 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .academic-card {
+    padding: 14px !important;
+    border-radius: var(--radius-md);
+  }
+
+  .modal-overlay {
+    padding: 12px;
+    align-items: center;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .date-strip-container {
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+
+  .date-strip-item {
+    min-width: 82px !important;
+    padding: 8px 6px !important;
+  }
+
+  .date-strip-item .date-strip-num {
+    font-size: 1.1rem !important;
+  }
+
+  .segmented-control {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .segmented-control::-webkit-scrollbar {
+    display: none;
+  }
+
+  .segmented-control-item {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  /* Form inputs touch targets */
+  .form-input {
+    font-size: 16px !important; /* Prevents iOS auto-zoom on input focus */
+    padding: 10px 12px 10px 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1rem !important;
+  }
+
+  .btn {
+    padding: 8px 12px;
+  }
+}
+
+/* Admin Responsive Table vs Cards */
+.admin-mobile-card-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-desktop-table-container {
+  display: block;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .admin-desktop-table-container {
+    display: none;
+  }
+
+  .admin-mobile-card-list {
+    display: flex;
+  }
+
+  .admin-booking-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    padding: 12px;
+  }
+}
+
+/* Main Layout Responsive System */
+.main-content-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 48px 20px;
+  width: 100%;
+  flex: 1;
+}
+
+.academic-page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.booking-layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.booking-form-sticky-col {
+  position: sticky;
+  top: 76px;
+}
+
+@media (max-width: 900px) {
+  .main-content-layout {
+    padding: 12px 10px 40px 10px;
+  }
+
+  .academic-page-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .academic-page-header h2 {
+    font-size: 1.15rem !important;
+  }
+
+  .academic-page-header p {
+    font-size: 0.8rem !important;
+  }
+
+  .academic-page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .booking-layout-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .booking-form-sticky-col {
+    position: static;
+  }
+}
+
+/* Navbar Responsive System */
+.navbar-header {
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 12px 24px;
+  box-shadow: var(--shadow-xs);
+}
+
+.navbar-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.navbar-brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-tools-section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.navbar-tab-switch {
+  display: inline-flex;
+}
+
+@media (max-width: 768px) {
+  .navbar-header {
+    padding: 8px 12px;
+  }
+
+  .navbar-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .navbar-mobile-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .navbar-brand-section {
+    gap: 8px;
+  }
+
+  .navbar-brand-logo {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+  }
+
+  .navbar-brand-title {
+    font-size: 0.95rem !important;
+  }
+
+  .navbar-brand-subtitle {
+    display: none !important;
+  }
+
+  .navbar-desktop-tools {
+    display: none !important;
+  }
+
+  .navbar-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .navbar-tab-switch-mobile {
+    width: 100% !important;
+    display: flex !important;
+  }
+
+  .navbar-tab-switch-mobile .segmented-control-item {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .navbar-mobile-actions {
+    display: none !important;
+  }
+  .navbar-tab-switch-mobile {
+    display: none !important;
+  }
+  .navbar-mobile-top-bar {
+    display: contents;
+  }
 }
 
 /* Print Clean Pass */

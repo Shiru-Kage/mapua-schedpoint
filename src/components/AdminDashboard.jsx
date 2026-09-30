@@ -394,102 +394,174 @@ export default function AdminDashboard({
             </p>
           </div>
         ) : (
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '0.8125rem',
-            textAlign: 'left'
-          }}>
-            <thead>
-              <tr style={{
-                borderBottom: '2px solid var(--border-light)',
-                color: 'var(--text-muted)',
-                fontSize: '0.6875rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+          <>
+            {/* Desktop Table View */}
+            <div className="admin-desktop-table-container">
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '0.8125rem',
+                textAlign: 'left'
               }}>
-                <th style={{ padding: '10px 12px' }}>Scheduled Day & Date</th>
-                <th style={{ padding: '10px 12px' }}>Time Slot</th>
-                <th style={{ padding: '10px 12px' }}>Student Name</th>
-                <th style={{ padding: '10px 12px' }}>Student Number</th>
-                <th style={{ padding: '10px 12px' }}>Gender</th>
-                <th style={{ padding: '10px 12px' }}>Course / Section</th>
-                <th style={{ padding: '10px 12px' }}>Student Email</th>
-                <th style={{ padding: '10px 12px' }}>Reference ID</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                <thead>
+                  <tr style={{
+                    borderBottom: '2px solid var(--border-light)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.6875rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    <th style={{ padding: '10px 12px' }}>Scheduled Day & Date</th>
+                    <th style={{ padding: '10px 12px' }}>Time Slot</th>
+                    <th style={{ padding: '10px 12px' }}>Student Name</th>
+                    <th style={{ padding: '10px 12px' }}>Student Number</th>
+                    <th style={{ padding: '10px 12px' }}>Gender</th>
+                    <th style={{ padding: '10px 12px' }}>Course / Section</th>
+                    <th style={{ padding: '10px 12px' }}>Student Email</th>
+                    <th style={{ padding: '10px 12px' }}>Reference ID</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBookings.map((b) => (
+                    <tr
+                      key={b.slotId}
+                      style={{
+                        borderBottom: '1px solid var(--border-light)',
+                      }}
+                    >
+                      {/* Scheduled Day & Date Column */}
+                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Calendar size={14} color="var(--mapua-crimson)" />
+                          <span>{getFormattedDateLabel(b.date)}</span>
+                        </div>
+                      </td>
+
+                      {/* Time Slot Column */}
+                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--mapua-crimson)', whiteSpace: 'nowrap' }}>
+                        {b.timeDisplay}
+                      </td>
+
+                      {/* Student Name */}
+                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {b.fullName}
+                      </td>
+
+                      {/* Student Number */}
+                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                        {b.studentNumber}
+                      </td>
+
+                      {/* Gender */}
+                      <td style={{ padding: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                        {b.gender || '—'}
+                      </td>
+
+                      {/* Course & Section */}
+                      <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
+                        <span className="badge badge-neutral">
+                          {b.course}
+                        </span>
+                      </td>
+
+                      {/* Email */}
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                        {b.email}
+                      </td>
+
+                      {/* Reference ID */}
+                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-disabled)' }}>
+                        {b.id}
+                      </td>
+
+                      {/* Remove Button */}
+                      <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStudent(b)}
+                          disabled={isCancelling}
+                          className="btn btn-outline-danger"
+                          style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                          title="Remove this student and free up the slot"
+                        >
+                          <UserX size={13} />
+                          <span>Remove Student</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="admin-mobile-card-list">
               {filteredBookings.map((b) => (
-                <tr
-                  key={b.slotId}
-                  style={{
-                    borderBottom: '1px solid var(--border-light)',
-                  }}
-                >
-                  {/* Scheduled Day & Date Column */}
-                  <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Calendar size={14} color="var(--mapua-crimson)" />
-                      <span>{getFormattedDateLabel(b.date)}</span>
+                <div key={b.slotId} className="admin-booking-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                        {b.fullName}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                        ID: {b.studentNumber} {b.gender ? `• ${b.gender}` : ''}
+                      </div>
                     </div>
-                  </td>
-
-                  {/* Time Slot Column */}
-                  <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--mapua-crimson)', whiteSpace: 'nowrap' }}>
-                    {b.timeDisplay}
-                  </td>
-
-                  {/* Student Name */}
-                  <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {b.fullName}
-                  </td>
-
-                  {/* Student Number */}
-                  <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                    {b.studentNumber}
-                  </td>
-
-                  {/* Gender */}
-                  <td style={{ padding: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    {b.gender || '—'}
-                  </td>
-
-                  {/* Course & Section */}
-                  <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
-                    <span className="badge badge-neutral">
+                    <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
                       {b.course}
                     </span>
-                  </td>
+                  </div>
 
-                  {/* Email */}
-                  <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
-                    {b.email}
-                  </td>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'var(--bg-subtle)',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
+                      <Clock size={14} />
+                      <span>{b.timeDisplay}</span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      {getFormattedDateLabel(b.date)}
+                    </div>
+                  </div>
 
-                  {/* Reference ID */}
-                  <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-disabled)' }}>
-                    {b.id}
-                  </td>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                      <Mail size={12} color="var(--text-muted)" />
+                      <span>{b.email}</span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-disabled)' }}>
+                      #{b.id?.slice(0, 8)}
+                    </span>
+                  </div>
 
-                  {/* Remove Button */}
-                  <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveStudent(b)}
-                      disabled={isCancelling}
-                      className="btn btn-outline-danger"
-                      style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-                      title="Remove this student and free up the slot"
-                    >
-                      <UserX size={13} />
-                      <span>Remove Student</span>
-                    </button>
-                  </td>
-                </tr>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveStudent(b)}
+                    disabled={isCancelling}
+                    className="btn btn-outline-danger"
+                    style={{ width: '100%', padding: '8px', fontSize: '0.8125rem' }}
+                  >
+                    <UserX size={14} />
+                    <span>Remove Student Reservation</span>
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 

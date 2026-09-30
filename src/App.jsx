@@ -165,26 +165,11 @@ export default function App() {
       />
 
       {/* Main Container */}
-      <main style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: '24px 20px 48px 20px',
-        width: '100%',
-        flex: 1
-      }}>
+      <main className="main-content-layout">
         {currentTab === 'booking' ? (
           <div>
             {/* Academic Page Header */}
-            <div style={{
-              marginBottom: '24px',
-              paddingBottom: '16px',
-              borderBottom: '1px solid var(--border-light)',
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              gap: '12px'
-            }}>
+            <div className="academic-page-header">
               <div>
                 <h2 style={{
                   fontSize: '1.5rem',
@@ -215,13 +200,8 @@ export default function App() {
             </div>
 
             {/* Split layout: Calendar View (Left) & Form (Right) */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-              gap: '20px',
-              alignItems: 'start'
-            }}>
-              <div style={{ flex: '1 1 60%' }}>
+            <div className="booking-layout-grid">
+              <div>
                 <CalendarView
                   date={date}
                   setDate={setDate}
@@ -236,7 +216,7 @@ export default function App() {
                 />
               </div>
 
-              <div style={{ flex: '1 1 40%', position: 'sticky', top: '76px' }}>
+              <div id="student-booking-form-section" className="booking-form-sticky-col">
                 <BookingForm
                   selectedSlot={selectedSlot}
                   onSubmit={handleBookingSubmit}
