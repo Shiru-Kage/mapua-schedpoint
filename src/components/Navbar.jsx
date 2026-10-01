@@ -158,8 +158,48 @@ export default function Navbar({
             </button>
           </div>
 
-          {/* Portal Switch: Student Booking vs Instructor Portal */}
-          <div className="segmented-control navbar-tab-switch">
+          {/* Portal Switch: Only visible when logged in as Instructor */}
+          {currentUser?.role === 'instructor' && (
+            <div className="segmented-control navbar-tab-switch">
+              <button
+                type="button"
+                onClick={() => setCurrentTab('booking')}
+                className={`segmented-control-item ${currentTab === 'booking' ? 'active' : ''}`}
+                title="View / Schedule Consultation Slots"
+              >
+                <Users size={14} />
+                <span>Student Schedule</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentTab('admin')}
+                className={`segmented-control-item ${currentTab === 'admin' ? 'active' : ''}`}
+                title="Return to Instructor Dashboard"
+              >
+                <Shield size={14} />
+                <span>Instructor Portal</span>
+                {bookingsCount > 0 && (
+                  <span style={{
+                    background: 'var(--mapua-crimson)',
+                    color: '#ffffff',
+                    borderRadius: '10px',
+                    padding: '1px 6px',
+                    fontSize: '0.6875rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700
+                  }}>
+                    {bookingsCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Portal Switch on Mobile (Only for Instructors) */}
+        {currentUser?.role === 'instructor' && (
+          <div className="segmented-control navbar-tab-switch-mobile">
             <button
               type="button"
               onClick={() => setCurrentTab('booking')}
@@ -171,13 +211,7 @@ export default function Navbar({
 
             <button
               type="button"
-              onClick={() => {
-                if (isAdminUnlocked) {
-                  setCurrentTab('admin');
-                } else {
-                  openAdminModal();
-                }
-              }}
+              onClick={() => setCurrentTab('admin')}
               className={`segmented-control-item ${currentTab === 'admin' ? 'active' : ''}`}
             >
               <Shield size={14} />
@@ -197,47 +231,7 @@ export default function Navbar({
               )}
             </button>
           </div>
-        </div>
-
-        {/* Portal Switch on Mobile (full width row) */}
-        <div className="segmented-control navbar-tab-switch-mobile">
-          <button
-            type="button"
-            onClick={() => setCurrentTab('booking')}
-            className={`segmented-control-item ${currentTab === 'booking' ? 'active' : ''}`}
-          >
-            <Users size={14} />
-            <span>Student Schedule</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (isAdminUnlocked) {
-                setCurrentTab('admin');
-              } else {
-                openAdminModal();
-              }
-            }}
-            className={`segmented-control-item ${currentTab === 'admin' ? 'active' : ''}`}
-          >
-            <Shield size={14} />
-            <span>Instructor Portal</span>
-            {bookingsCount > 0 && (
-              <span style={{
-                background: 'var(--mapua-crimson)',
-                color: '#ffffff',
-                borderRadius: '10px',
-                padding: '1px 6px',
-                fontSize: '0.6875rem',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700
-              }}>
-                {bookingsCount}
-              </span>
-            )}
-          </button>
-        </div>
+        )}
       </div>
     </header>
   );

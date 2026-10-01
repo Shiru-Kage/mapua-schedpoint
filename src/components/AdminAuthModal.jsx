@@ -180,7 +180,7 @@ export default function AdminAuthModal({ isOpen, onClose, onUnlock }) {
                 <input
                   type="email"
                   required
-                  placeholder="e.g. acvillaluz@mapua.edu.ph"
+                  placeholder="instructor@mapua.edu.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="form-input"
@@ -300,7 +300,7 @@ export default function AdminAuthModal({ isOpen, onClose, onUnlock }) {
                     required
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    placeholder="e.g. acvillaluz@mapua.edu.ph"
+                    placeholder="instructor@mapua.edu.ph"
                     className="form-input"
                   />
                 </div>

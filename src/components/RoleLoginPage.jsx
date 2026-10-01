@@ -438,7 +438,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. acvillaluz@mapua.edu.ph"
+                      placeholder="instructor@mapua.edu.ph"
                       className="form-input"
                       autoFocus
                     />
@@ -617,7 +617,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                         required
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
-                        placeholder="e.g. acvillaluz@mapua.edu.ph"
+                        placeholder="instructor@mapua.edu.ph"
                         className="form-input"
                         autoFocus
                       />
