@@ -47,7 +47,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
 
     // STRICT REFERENCE CODE ENFORCEMENT:
     if (enteredCodeClean !== actualCodeClean) {
-      setVerifyError('❌ Invalid Reference Code. Retraction denied. You must enter the exact Reference Code (e.g. BKG-...) for this booking.');
+      setVerifyError('Invalid Reference Code. Please enter the exact Reference Code for this booking.');
       return;
     }
 
@@ -182,7 +182,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                       }}
                     >
                       <Mail size={14} />
-                      <span>{isGoogle ? 'Save Cancellation Receipt in Gmail (1-Click)' : 'Email Receipt to Myself'}</span>
+                      <span>{isGoogle ? 'Save Copy in Gmail' : 'Email Copy'}</span>
                     </a>
                   );
                 })()}
@@ -256,7 +256,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                 />
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.4 }}>
-                💡 <em>Check the email from ShipMyForm / SchedPoint sent to {retractingBooking.email}, or paste the code you copied upon booking.</em>
+                <em>Check the email from ShipMyForm sent to {retractingBooking.email}, or enter the code copied upon booking.</em>
               </div>
 
               {verifyError && (
@@ -341,8 +341,8 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                             <span className="badge badge-booked">
                               Reserved
                             </span>
-                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                              🔒 Ref Protected
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
+                              Ref: Protected
                             </span>
                           </div>
                         </div>

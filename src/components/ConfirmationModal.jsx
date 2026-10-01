@@ -72,7 +72,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
     const actual = String(booking.id || '').trim().toLowerCase();
 
     if (entered !== actual) {
-      setRetractError('❌ Invalid Reference Code. Retraction denied. Please enter the exact Reference Code.');
+      setRetractError('Invalid Reference Code. Please enter the exact Reference Code.');
       return;
     }
 
@@ -181,7 +181,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               {booking.id}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              ⚠️ <strong>Save this code!</strong> You will need this Reference Code to retract or manage your slot.
+              <strong>Important:</strong> Save this Reference Code to manage or retract your reservation.
             </div>
           </div>
 
@@ -254,23 +254,23 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
           {/* Email Notification & First-Time User Instructions */}
           <div style={{
-            background: '#EFF6FF',
-            border: '1.5px solid #93C5FD',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-medium)',
             borderRadius: 'var(--radius-md)',
-            padding: '10px 12px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '5px'
+            gap: '4px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1E40AF', fontWeight: 700, fontSize: '0.78rem' }}>
-              <Mail size={15} color="#2563EB" />
-              <span>Automated Email Sent to: {booking.email}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.78rem' }}>
+              <Mail size={14} color="var(--text-secondary)" />
+              <span>Email Confirmation Dispatched: {booking.email}</span>
             </div>
-            <div style={{ fontSize: '0.73rem', color: '#1E3A8A', lineHeight: 1.45 }}>
-              📩 <strong>First-Time Users:</strong> Check your inbox (or Spam/Promotions folder) for an email from <strong>ShipMyForm</strong>. If prompted with <em>"Activate Form / View Submission"</em>, click the link once to unlock your submission and view your Reference Code.
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              <strong>First-Time Recipients:</strong> Check your inbox or spam folder for an initial notification from <strong>ShipMyForm</strong>. If prompted to confirm or activate, open the link once to receive your submission summary and reference code.
             </div>
-            <div style={{ fontSize: '0.71rem', color: '#2563EB', lineHeight: 1.4 }}>
-              💡 <strong>Instant Backup:</strong> Your Reference Code is also shown above! Click <strong>"Copy Code"</strong> or <strong>"Print / PDF Pass"</strong> to keep a direct copy right now.
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              Note: Your Reference Code is also displayed above. You may copy the code or print this pass for your records.
             </div>
           </div>
 
@@ -295,7 +295,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               title="Open pre-filled draft in Gmail addressed to your inbox"
             >
               <Mail size={16} />
-              <span>{isGoogleUser ? 'Send Pass to My Gmail (1-Click)' : 'Email Pass to Myself (1-Click)'}</span>
+              <span>{isGoogleUser ? 'Send Copy to Gmail' : 'Email Copy to Myself'}</span>
             </a>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
