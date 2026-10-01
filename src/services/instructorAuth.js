@@ -67,7 +67,7 @@ export async function verifyInstructorCredentials(email, password) {
   if (!isAllowedInstructorEmail(norm)) {
     return { 
       success: false, 
-      error: `Access Denied: "${email}" is not authorized as an instructor. Authorized instructor emails: ${ALLOWED_INSTRUCTOR_EMAILS.join(', ')}` 
+      error: `Access Denied: "${email}" is not recognized as an authorized instructor email.` 
     };
   }
 
@@ -102,7 +102,7 @@ export async function verifyInstructorCredentials(email, password) {
     return { success: true, email: norm };
   }
 
-  return { success: false, error: 'Invalid password. (Default password is 1234 unless previously reset).' };
+  return { success: false, error: 'Incorrect password. Please verify your password and try again.' };
 }
 
 /**

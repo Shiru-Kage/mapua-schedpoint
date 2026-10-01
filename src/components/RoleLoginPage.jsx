@@ -445,39 +445,6 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                   </div>
                 </div>
 
-                {/* Quick email selector chips */}
-                <div style={{
-                  background: 'var(--bg-subtle)',
-                  padding: '10px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-light)'
-                }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    Quick Select Authorized Email:
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {ALLOWED_INSTRUCTOR_EMAILS.map((acc) => (
-                      <button
-                        key={acc}
-                        type="button"
-                        onClick={() => setEmail(acc)}
-                        style={{
-                          background: email === acc ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
-                          color: email === acc ? '#ffffff' : 'var(--text-primary)',
-                          border: '1px solid var(--border-medium)',
-                          borderRadius: '4px',
-                          padding: '3px 8px',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          fontWeight: email === acc ? 700 : 500
-                        }}
-                      >
-                        {acc}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Password Field */}
                 <div className="form-group" style={{ margin: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -513,7 +480,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password (default: 1234)"
+                      placeholder="Enter password"
                       className="form-input"
                       style={{ paddingRight: '40px' }}
                     />
@@ -536,9 +503,6 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                    Note: Default password is <strong>1234</strong> unless updated.
-                  </span>
                 </div>
 
                 <button
@@ -657,38 +621,6 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                         className="form-input"
                         autoFocus
                       />
-                    </div>
-                  </div>
-
-                  <div style={{
-                    background: 'var(--bg-subtle)',
-                    padding: '10px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)'
-                  }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                      Authorized Accounts:
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {ALLOWED_INSTRUCTOR_EMAILS.map((acc) => (
-                        <button
-                          key={acc}
-                          type="button"
-                          onClick={() => setResetEmail(acc)}
-                          style={{
-                            background: resetEmail === acc ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
-                            color: resetEmail === acc ? '#ffffff' : 'var(--text-primary)',
-                            border: '1px solid var(--border-medium)',
-                            borderRadius: '4px',
-                            padding: '3px 8px',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            fontWeight: resetEmail === acc ? 700 : 500
-                          }}
-                        >
-                          {acc}
-                        </button>
-                      ))}
                     </div>
                   </div>
 

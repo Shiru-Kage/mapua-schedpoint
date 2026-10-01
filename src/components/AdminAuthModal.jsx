@@ -189,38 +189,6 @@ export default function AdminAuthModal({ isOpen, onClose, onUnlock }) {
               </div>
             </div>
 
-            {/* Quick email selector */}
-            <div style={{
-              background: 'var(--bg-subtle)',
-              padding: '8px 10px',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-light)'
-            }}>
-              <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Authorized Emails:
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {ALLOWED_INSTRUCTOR_EMAILS.map((acc) => (
-                  <button
-                    key={acc}
-                    type="button"
-                    onClick={() => setEmail(acc)}
-                    style={{
-                      background: email === acc ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
-                      color: email === acc ? '#ffffff' : 'var(--text-primary)',
-                      border: '1px solid var(--border-medium)',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '0.7rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {acc}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="form-group" style={{ margin: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label className="form-label" style={{ fontWeight: 700, margin: 0 }}>Password</label>
@@ -249,7 +217,7 @@ export default function AdminAuthModal({ isOpen, onClose, onUnlock }) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter password (default: 1234)"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input"
