@@ -154,9 +154,9 @@ function apiDevPlugin() {
 
         // 3. DELETE /api/bookings/:slotId
         if (url?.startsWith('/api/bookings/') && req.method === 'DELETE') {
-          const slotId = url.replace('/api/bookings/', '');
+          const slotId = decodeURIComponent(url.replace('/api/bookings/', '').trim());
           let bookings = readBookings();
-          bookings = bookings.filter(b => b.slotId !== slotId);
+          bookings = bookings.filter(b => b.slotId !== slotId && b.id !== slotId);
           writeBookings(bookings);
           broadcast(bookings);
           res.setHeader('Content-Type', 'application/json');

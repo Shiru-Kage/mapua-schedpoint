@@ -108,6 +108,9 @@ export default function App() {
         if (isNowBooked) {
           setSelectedSlot(null);
           setErrorMessage('Notice: The slot you were viewing was just claimed by another student. Please select an available slot.');
+        } else {
+          // If the slot is open or was retracted, clear any stale claim error
+          setErrorMessage(prev => prev.includes('claimed by another student') ? '' : prev);
         }
       }
     });
@@ -207,6 +210,7 @@ export default function App() {
   // Instructor or student slot release/retraction handler
   const handleCancelBooking = async (slotId, bookingData = null) => {
     setIsCancelling(true);
+    setErrorMessage('');
     try {
       const targetBooking = bookingData || bookings.find(b => b.slotId === slotId);
       // Immediately update UI state so table and calendar update with 0 latency
@@ -329,10 +333,17 @@ export default function App() {
               <div className="booking-schedule-scroll-col">
                 <CalendarView
                   date={date}
-                  setDate={setDate}
+                  setDate={(newDate) => {
+                    setDate(newDate);
+                    setSelectedSlot(null);
+                    setErrorMessage('');
+                  }}
                   slotsData={slotsData}
                   selectedSlot={selectedSlot}
-                  setSelectedSlot={setSelectedSlot}
+                  setSelectedSlot={(slot) => {
+                    setSelectedSlot(slot);
+                    setErrorMessage('');
+                  }}
                   bookings={bookings}
                   sessionFilter={sessionFilter}
                   setSessionFilter={setSessionFilter}
@@ -345,14 +356,20 @@ export default function App() {
               <div id="student-booking-form-section" className="booking-form-scroll-col">
                 <BookingForm
                   selectedSlot={selectedSlot}
-                  onDeselectSlot={() => setSelectedSlot(null)}
+                  onDeselectSlot={() => {
+                    setSelectedSlot(null);
+                    setErrorMessage('');
+                  }}
                   onSubmit={handleBookingSubmit}
                   isSubmitting={isSubmitting}
                   errorMessage={errorMessage}
                   clearError={() => setErrorMessage('')}
                   bookings={bookings}
                   date={date}
-                  onOpenRetractModal={() => setShowRetractModal(true)}
+                  onOpenRetractModal={() => {
+                    setShowRetractModal(true);
+                    setErrorMessage('');
+                  }}
                 />
               </div>
             </div>

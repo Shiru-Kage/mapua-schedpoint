@@ -127,9 +127,9 @@ app.post('/api/bookings', (req, res) => {
 });
 
 app.delete('/api/bookings/:slotId', (req, res) => {
-  const { slotId } = req.params;
+  const slotId = decodeURIComponent(req.params.slotId || '').trim();
   let bookings = readBookings();
-  bookings = bookings.filter(b => b.slotId !== slotId);
+  bookings = bookings.filter(b => b.slotId !== slotId && b.id !== slotId);
   writeBookings(bookings);
   res.json({ success: true });
 });

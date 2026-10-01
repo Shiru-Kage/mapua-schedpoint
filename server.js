@@ -141,10 +141,10 @@ app.post('/api/bookings', (req, res) => {
 });
 
 app.delete('/api/bookings/:slotId', (req, res) => {
-  const { slotId } = req.params;
+  const slotId = decodeURIComponent(req.params.slotId || '').trim();
   let bookings = readBookings();
   const initialLength = bookings.length;
-  bookings = bookings.filter(b => b.slotId !== slotId);
+  bookings = bookings.filter(b => b.slotId !== slotId && b.id !== slotId);
 
   if (bookings.length !== initialLength) {
     writeBookings(bookings);

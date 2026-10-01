@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { User, Hash, BookOpen, Mail, Clock, AlertCircle, ArrowRight, RotateCcw, FileText } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -23,6 +23,16 @@ export default function BookingForm({
   });
   const [studentNumError, setStudentNumError] = useState('');
   const [emailError, setEmailError] = useState('');
+
+  // Auto-clear stale collision error if the current slot is open / not claimed
+  useEffect(() => {
+    if (errorMessage && selectedSlot) {
+      const isSlotClaimed = (bookings || []).some(b => b.slotId === selectedSlot.id);
+      if (!isSlotClaimed && errorMessage.includes('claimed by another student')) {
+        clearError();
+      }
+    }
+  }, [selectedSlot, bookings, errorMessage, clearError]);
 
   const handleChange = (e) => {
     if (errorMessage) clearError();

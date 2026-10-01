@@ -198,14 +198,22 @@ export async function submitBooking(bookingPayload) {
 export async function cancelBooking(slotId) {
   // Always update local cache and broadcast immediately so the UI reflects removal with 0 delay
   const current = getLocalBookings();
-  const updated = current.filter(b => b.slotId !== slotId);
+  const targetBooking = current.find(b => b.slotId === slotId || b.id === slotId);
+  const updated = current.filter(b => b.slotId !== slotId && b.id !== slotId);
   saveLocalBookings(updated);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  }
 
   // 1. Firebase Firestore
   const db = getFirebaseDb();
   if (db) {
     try {
       await deleteDoc(doc(db, 'bookings', slotId));
+      if (targetBooking && targetBooking.id && targetBooking.id !== slotId) {
+        await deleteDoc(doc(db, 'bookings', targetBooking.id));
+      }
     } catch (e) {
       console.warn('Firestore delete warning:', e);
     }
@@ -213,7 +221,7 @@ export async function cancelBooking(slotId) {
 
   // 2. Backend Server API
   try {
-    await fetch(`/api/bookings/${slotId}`, {
+    await fetch(`/api/bookings/${encodeURIComponent(slotId)}`, {
       method: 'DELETE',
     });
   } catch {
@@ -381,7 +389,14 @@ export function subscribeToBookings(onUpdate) {
     }
   };
 
+  const handleCustom = (e) => {
+    if (e.detail && Array.isArray(e.detail)) {
+      onUpdate(e.detail);
+    }
+  };
+
   window.addEventListener('storage', handleStorage);
+  window.addEventListener('mapua_bookings_updated', handleCustom);
   if (broadcastChannel) {
     broadcastChannel.addEventListener('message', handleBroadcast);
   }
@@ -391,6 +406,7 @@ export function subscribeToBookings(onUpdate) {
     if (unsubFirebase) unsubFirebase();
     if (eventSource) eventSource.close();
     window.removeEventListener('storage', handleStorage);
+    window.removeEventListener('mapua_bookings_updated', handleCustom);
     if (broadcastChannel) {
       broadcastChannel.removeEventListener('message', handleBroadcast);
     }

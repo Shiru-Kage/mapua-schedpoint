@@ -391,7 +391,7 @@ export default function CalendarView({
                     }}>
                       <Lock size={13} style={{ flexShrink: 0 }} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        Reserved by Student ({booking.course || 'Closed'})
+                        Reserved: <strong>{booking.fullName || 'Student'}</strong> <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', opacity: 0.85 }}>({booking.studentNumber || 'Closed'})</span>
                       </span>
                     </div>
                   ) : isSelected ? (
@@ -476,8 +476,18 @@ export default function CalendarView({
                   <div className="slot-time">
                     {slot.timeDisplay}
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                    10 Minutes Window
+                  <div style={{
+                    fontSize: '0.6875rem',
+                    color: isBooked ? 'var(--status-booked-text)' : 'var(--text-muted)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {isBooked ? (
+                      <span><strong>{booking.fullName || 'Student'}</strong> ({booking.studentNumber || 'Closed'})</span>
+                    ) : (
+                      <span>{slotsData?.slotMinutes || 10} Minutes Window</span>
+                    )}
                   </div>
                 </div>
 
