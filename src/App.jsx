@@ -13,7 +13,10 @@ import {
   fetchAllBookings, 
   submitBooking, 
   cancelBooking, 
-  subscribeToBookings 
+  subscribeToBookings,
+  updateBookingAttendance,
+  batchUpdateBookingAttendance,
+  updateBookingProjectTitle
 } from './services/bookingStorage';
 import { 
   getLocalAllowedDates, 
@@ -225,6 +228,22 @@ export default function App() {
     }
   };
 
+  const handleUpdateAttendance = async (slotId, status) => {
+    setBookings(prev => prev.map(b => b.slotId === slotId ? { ...b, attendanceStatus: status } : b));
+    await updateBookingAttendance(slotId, status);
+  };
+
+  const handleBatchUpdateAttendance = async (slotIds, status) => {
+    const idSet = new Set(slotIds);
+    setBookings(prev => prev.map(b => idSet.has(b.slotId) ? { ...b, attendanceStatus: status } : b));
+    await batchUpdateBookingAttendance(slotIds, status);
+  };
+
+  const handleUpdateProjectTitle = async (slotId, projectTitle) => {
+    setBookings(prev => prev.map(b => b.slotId === slotId ? { ...b, projectTitle } : b));
+    await updateBookingProjectTitle(slotId, projectTitle);
+  };
+
   const handleLogout = () => {
     clearSession();
     setCurrentUser(null);
@@ -362,6 +381,9 @@ export default function App() {
               }
               return res;
             }}
+            onUpdateAttendance={handleUpdateAttendance}
+            onBatchUpdateAttendance={handleBatchUpdateAttendance}
+            onUpdateProjectTitle={handleUpdateProjectTitle}
           />
         )}
       </main>

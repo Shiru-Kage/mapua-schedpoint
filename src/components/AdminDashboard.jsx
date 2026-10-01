@@ -18,7 +18,14 @@ import {
   CheckCircle2,
   CalendarPlus,
   Sliders,
-  Save
+  Save,
+  Edit2,
+  CheckSquare,
+  Square,
+  Check,
+  XCircle,
+  AlertCircle,
+  Undo2
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -32,13 +39,24 @@ export default function AdminDashboard({
   allowedDates = [],
   onUpdateAllowedDates,
   timeslotConfig,
-  onUpdateTimeslotConfig
+  onUpdateTimeslotConfig,
+  onUpdateAttendance,
+  onBatchUpdateAttendance,
+  onUpdateProjectTitle
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSession, setFilterSession] = useState('all');
   // Default to 'all' so instructor sees ALL reserved schedules across all dates by default
   const [filterDate, setFilterDate] = useState('all');
   const [studentToRemove, setStudentToRemove] = useState(null);
+
+  // Attendance Tab & Management State
+  const [attendanceTab, setAttendanceTab] = useState('active'); // 'active' | 'finished' | 'missed' | 'all'
+  const [selectedSlotIds, setSelectedSlotIds] = useState([]);
+  const [editingTitleBooking, setEditingTitleBooking] = useState(null);
+  const [editingTitleText, setEditingTitleText] = useState('');
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const [attendanceFeedback, setAttendanceFeedback] = useState('');
 
   // Date Management State
   const [newDateInput, setNewDateInput] = useState('');
@@ -183,6 +201,15 @@ export default function AdminDashboard({
       );
     }
 
+    // Attendance tab filter
+    if (attendanceTab === 'active') {
+      result = result.filter(b => !b.attendanceStatus || b.attendanceStatus === 'active');
+    } else if (attendanceTab === 'finished') {
+      result = result.filter(b => b.attendanceStatus === 'finished');
+    } else if (attendanceTab === 'missed') {
+      result = result.filter(b => b.attendanceStatus === 'missed');
+    }
+
     // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -190,6 +217,7 @@ export default function AdminDashboard({
         b.fullName?.toLowerCase().includes(q) ||
         b.studentNumber?.toLowerCase().includes(q) ||
         b.course?.toLowerCase().includes(q) ||
+        b.projectTitle?.toLowerCase().includes(q) ||
         b.email?.toLowerCase().includes(q) ||
         b.timeDisplay?.toLowerCase().includes(q) ||
         b.date?.toLowerCase().includes(q) ||
@@ -206,15 +234,93 @@ export default function AdminDashboard({
     });
 
     return result;
-  }, [bookings, filterDate, filterSession, searchQuery]);
+  }, [bookings, filterDate, filterSession, searchQuery, attendanceTab]);
 
   const totalAllBookings = bookings.length;
+  const activeBookingsCount = bookings.filter(b => !b.attendanceStatus || b.attendanceStatus === 'active').length;
+  const finishedBookingsCount = bookings.filter(b => b.attendanceStatus === 'finished').length;
+  const missedBookingsCount = bookings.filter(b => b.attendanceStatus === 'missed').length;
+
   const morningBookingsCount = bookings.filter(b => 
     b.slotId?.includes('_07') || b.slotId?.includes('_08') || b.slotId?.includes('_09') || b.slotId?.includes('_10')
   ).length;
   const afternoonBookingsCount = bookings.filter(b => 
     b.slotId?.includes('_13') || b.slotId?.includes('_14') || b.slotId?.includes('_15')
   ).length;
+
+  // Single student attendance status change
+  const handleMarkStatus = async (slotId, newStatus, studentName) => {
+    try {
+      if (onUpdateAttendance) {
+        await onUpdateAttendance(slotId, newStatus);
+      }
+      const label = newStatus === 'finished' ? 'Marked as Finished' : newStatus === 'missed' ? 'Marked as Missed Schedule' : 'Reactivated to Active Schedule';
+      setAttendanceFeedback(`✓ ${studentName || 'Student'}: ${label}`);
+      setTimeout(() => setAttendanceFeedback(''), 3500);
+    } catch (err) {
+      console.error('Error updating status:', err);
+    }
+  };
+
+  // Batch attendance status change
+  const handleBatchStatus = async (newStatus) => {
+    if (selectedSlotIds.length === 0) return;
+    try {
+      if (onBatchUpdateAttendance) {
+        await onBatchUpdateAttendance(selectedSlotIds, newStatus);
+      }
+      const count = selectedSlotIds.length;
+      const label = newStatus === 'finished' ? 'marked as Finished' : newStatus === 'missed' ? 'marked as Missed Schedule' : 'moved to Active Schedule';
+      setAttendanceFeedback(`✓ ${count} student${count > 1 ? 's' : ''} ${label}`);
+      setSelectedSlotIds([]);
+      setTimeout(() => setAttendanceFeedback(''), 3500);
+    } catch (err) {
+      console.error('Error batch updating status:', err);
+    }
+  };
+
+  // Selection toggle
+  const isAllVisibleSelected = filteredBookings.length > 0 && filteredBookings.every(b => selectedSlotIds.includes(b.slotId));
+  
+  const handleSelectAllVisible = () => {
+    if (isAllVisibleSelected) {
+      const visibleIdSet = new Set(filteredBookings.map(b => b.slotId));
+      setSelectedSlotIds(prev => prev.filter(id => !visibleIdSet.has(id)));
+    } else {
+      const visibleIds = filteredBookings.map(b => b.slotId);
+      setSelectedSlotIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const handleToggleSelect = (slotId) => {
+    setSelectedSlotIds(prev => 
+      prev.includes(slotId) ? prev.filter(id => id !== slotId) : [...prev, slotId]
+    );
+  };
+
+  // Project title editing
+  const handleOpenEditTitle = (booking) => {
+    setEditingTitleBooking(booking);
+    setEditingTitleText(booking.projectTitle || '');
+  };
+
+  const handleSaveProjectTitle = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingTitleBooking) return;
+    setIsSavingTitle(true);
+    try {
+      if (onUpdateProjectTitle) {
+        await onUpdateProjectTitle(editingTitleBooking.slotId, editingTitleText.trim());
+      }
+      setAttendanceFeedback(`✓ Project title updated for ${editingTitleBooking.fullName}`);
+      setEditingTitleBooking(null);
+      setTimeout(() => setAttendanceFeedback(''), 3500);
+    } catch (err) {
+      console.error('Error updating project title:', err);
+    } finally {
+      setIsSavingTitle(false);
+    }
+  };
 
   const [exportSuccess, setExportSuccess] = useState(false);
 
@@ -226,8 +332,6 @@ export default function AdminDashboard({
     setExportSuccess(true);
     setTimeout(() => setExportSuccess(false), 3000);
 
-    // If online with server, the native <a href="/api/export-csv" download="..."> will trigger!
-    // But we also generate the client-side data URI as backup:
     try {
       const dataToExport = filteredBookings.length > 0 ? filteredBookings : bookings;
       const headers = [
@@ -238,6 +342,7 @@ export default function AdminDashboard({
         'Gender',
         'Course & Section',
         'Project Title',
+        'Attendance Status',
         'Student Email',
         'Booking Reference ID',
         'Booking Timestamp'
@@ -250,6 +355,7 @@ export default function AdminDashboard({
         `"${(b.gender || 'Not specified').replace(/"/g, '""')}"`,
         `"${(b.course || '').replace(/"/g, '""')}"`,
         `"${(b.projectTitle || '').replace(/"/g, '""')}"`,
+        `"${((b.attendanceStatus || 'active').toUpperCase()).replace(/"/g, '""')}"`,
         `"${(b.email || '').replace(/"/g, '""')}"`,
         `"${(b.id || '').replace(/"/g, '""')}"`,
         `"${(b.createdAt || '').replace(/"/g, '""')}"`
@@ -949,18 +1055,39 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* Roster Table with Day/Date Column */}
+      {/* Roster Table Card with Day/Date Column & Attendance Status Tabs */}
       <div className="academic-card" style={{ padding: '20px', overflowX: 'auto' }}>
+        {/* Attendance Action Feedback Toast */}
+        {attendanceFeedback && (
+          <div style={{
+            fontSize: '0.8125rem',
+            color: '#166534',
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'fadeIn 0.2s ease-in-out'
+          }}>
+            <CheckCircle2 size={16} color="#166534" />
+            <span style={{ fontWeight: 600 }}>{attendanceFeedback}</span>
+          </div>
+        )}
+
+        {/* Section Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
+          marginBottom: '14px',
           flexWrap: 'wrap',
           gap: '8px'
         }}>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               {filterDate === 'all' ? 'All Scheduled OJT Defense Bookings' : `OJT Defense Roster for ${getFormattedDateLabel(filterDate)}`}
             </h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -969,9 +1096,236 @@ export default function AdminDashboard({
           </div>
 
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Click <strong>Remove Student</strong> to cancel a booking and reopen the slot.
+            Mark students as <strong>Finished</strong> or <strong>Missed</strong> to filter them into designated tabs.
           </div>
         </div>
+
+        {/* Attendance Filter Tabs */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          borderBottom: '1px solid var(--border-medium)',
+          paddingBottom: '14px',
+          marginBottom: '16px',
+          flexWrap: 'wrap'
+        }}>
+          {/* Active Schedule Tab (Default) */}
+          <button
+            type="button"
+            onClick={() => { setAttendanceTab('active'); setSelectedSlotIds([]); }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: attendanceTab === 'active' ? 'var(--mapua-crimson)' : 'var(--border-medium)',
+              background: attendanceTab === 'active' ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
+              color: attendanceTab === 'active' ? '#ffffff' : 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Clock size={15} />
+            <span>Active Schedule</span>
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              background: attendanceTab === 'active' ? 'rgba(255,255,255,0.25)' : 'var(--bg-subtle)',
+              color: attendanceTab === 'active' ? '#ffffff' : 'var(--text-secondary)'
+            }}>
+              {activeBookingsCount}
+            </span>
+          </button>
+
+          {/* Finished Tab */}
+          <button
+            type="button"
+            onClick={() => { setAttendanceTab('finished'); setSelectedSlotIds([]); }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: attendanceTab === 'finished' ? '#16a34a' : 'var(--border-medium)',
+              background: attendanceTab === 'finished' ? '#16a34a' : 'var(--bg-surface)',
+              color: attendanceTab === 'finished' ? '#ffffff' : 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <CheckCircle2 size={15} />
+            <span>Finished Defenses</span>
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              background: attendanceTab === 'finished' ? 'rgba(255,255,255,0.25)' : '#DCFCE7',
+              color: attendanceTab === 'finished' ? '#ffffff' : '#166534'
+            }}>
+              {finishedBookingsCount}
+            </span>
+          </button>
+
+          {/* Missed Tab */}
+          <button
+            type="button"
+            onClick={() => { setAttendanceTab('missed'); setSelectedSlotIds([]); }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: attendanceTab === 'missed' ? '#d97706' : 'var(--border-medium)',
+              background: attendanceTab === 'missed' ? '#d97706' : 'var(--bg-surface)',
+              color: attendanceTab === 'missed' ? '#ffffff' : 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <AlertTriangle size={15} />
+            <span>Missed Schedule</span>
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              background: attendanceTab === 'missed' ? 'rgba(255,255,255,0.25)' : '#FEF3C7',
+              color: attendanceTab === 'missed' ? '#ffffff' : '#92400E'
+            }}>
+              {missedBookingsCount}
+            </span>
+          </button>
+
+          {/* All Records Tab */}
+          <button
+            type="button"
+            onClick={() => { setAttendanceTab('all'); setSelectedSlotIds([]); }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: attendanceTab === 'all' ? '#475569' : 'var(--border-medium)',
+              background: attendanceTab === 'all' ? '#475569' : 'var(--bg-surface)',
+              color: attendanceTab === 'all' ? '#ffffff' : 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Users size={15} />
+            <span>All Records</span>
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              background: attendanceTab === 'all' ? 'rgba(255,255,255,0.25)' : 'var(--bg-subtle)',
+              color: attendanceTab === 'all' ? '#ffffff' : 'var(--text-secondary)'
+            }}>
+              {totalAllBookings}
+            </span>
+          </button>
+        </div>
+
+        {/* Batch Action Bar (Appears when 1 or more students are checked) */}
+        {selectedSlotIds.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '8px',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                {selectedSlotIds.length} student{selectedSlotIds.length > 1 ? 's' : ''} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedSlotIds([])}
+                className="btn btn-secondary"
+                style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+              >
+                Deselect All
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => handleBatchStatus('finished')}
+                className="btn"
+                style={{
+                  background: '#16a34a',
+                  borderColor: '#16a34a',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                <CheckCircle2 size={14} />
+                <span>Mark Selected Finished ({selectedSlotIds.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBatchStatus('missed')}
+                className="btn"
+                style={{
+                  background: '#d97706',
+                  borderColor: '#d97706',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                <AlertTriangle size={14} />
+                <span>Mark Selected Missed ({selectedSlotIds.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBatchStatus('active')}
+                className="btn btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.8rem', gap: '6px', cursor: 'pointer' }}
+              >
+                <RotateCcw size={14} />
+                <span>Move to Active ({selectedSlotIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {filteredBookings.length === 0 ? (
           <div style={{
@@ -983,10 +1337,15 @@ export default function AdminDashboard({
           }}>
             <Users size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
             <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              No reserved schedules found matching this filter
+              {attendanceTab === 'finished' ? 'No finished defenses yet' : 
+               attendanceTab === 'missed' ? 'No missed schedule records' : 
+               attendanceTab === 'active' ? 'No active scheduled defenses found' : 
+               'No reserved schedules found matching this filter'}
             </div>
-            <p style={{ fontSize: '0.8125rem', marginTop: '2px' }}>
-              When students make reservations, they will appear here across all dates.
+            <p style={{ fontSize: '0.8125rem', marginTop: '4px' }}>
+              {attendanceTab === 'finished' ? 'Mark active students as finished to see them here.' : 
+               attendanceTab === 'missed' ? 'Mark absent students as missed to track them here.' : 
+               'When students make reservations, they will appear here across all dates.'}
             </p>
           </div>
         ) : (
@@ -1007,6 +1366,17 @@ export default function AdminDashboard({
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}>
+                    {/* Row Selection Header */}
+                    <th style={{ padding: '10px 8px', width: '36px', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={isAllVisibleSelected}
+                        onChange={handleSelectAllVisible}
+                        title="Select / Deselect all visible students"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                      />
+                    </th>
+                    <th style={{ padding: '10px 12px' }}>Defense Status / Mark</th>
                     <th style={{ padding: '10px 12px' }}>Scheduled Day & Date</th>
                     <th style={{ padding: '10px 12px' }}>Time Slot</th>
                     <th style={{ padding: '10px 12px' }}>Student Name</th>
@@ -1020,170 +1390,543 @@ export default function AdminDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBookings.map((b) => (
-                    <tr
-                      key={b.slotId}
-                      style={{
-                        borderBottom: '1px solid var(--border-light)',
-                      }}
-                    >
-                      {/* Scheduled Day & Date Column */}
-                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Calendar size={14} color="var(--mapua-crimson)" />
-                          <span>{getFormattedDateLabel(b.date)}</span>
-                        </div>
-                      </td>
+                  {filteredBookings.map((b) => {
+                    const isSelected = selectedSlotIds.includes(b.slotId);
+                    const status = b.attendanceStatus || 'active';
 
-                      {/* Time Slot Column */}
-                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--mapua-crimson)', whiteSpace: 'nowrap' }}>
-                        {b.timeDisplay}
-                      </td>
+                    return (
+                      <tr
+                        key={b.slotId}
+                        style={{
+                          borderBottom: '1px solid var(--border-light)',
+                          background: isSelected ? 'rgba(217, 38, 38, 0.04)' : undefined
+                        }}
+                      >
+                        {/* Row Selection Checkbox */}
+                        <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(b.slotId)}
+                            style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                          />
+                        </td>
 
-                      {/* Student Name */}
-                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {b.fullName}
-                      </td>
+                        {/* Defense Status / Checkbox Action */}
+                        <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                          {status === 'active' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {/* Checkbox to Mark Finished */}
+                              <label style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                background: 'var(--bg-subtle)',
+                                border: '1px solid var(--border-medium)',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                userSelect: 'none'
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={false}
+                                  onChange={() => handleMarkStatus(b.slotId, 'finished', b.fullName)}
+                                  style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#16a34a' }}
+                                />
+                                <span>Finished</span>
+                              </label>
 
-                      {/* Student Number */}
-                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                        {b.studentNumber}
-                      </td>
+                              {/* Button to Mark Missed */}
+                              <button
+                                type="button"
+                                onClick={() => handleMarkStatus(b.slotId, 'missed', b.fullName)}
+                                title="Mark student as missed / absent"
+                                style={{
+                                  background: '#fffbeb',
+                                  border: '1px solid #fcd34d',
+                                  borderRadius: '6px',
+                                  color: '#b45309',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  padding: '4px 8px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <AlertTriangle size={12} color="#d97706" />
+                                <span>Missed</span>
+                              </button>
+                            </div>
+                          )}
 
-                      {/* Gender */}
-                      <td style={{ padding: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {b.gender || '—'}
-                      </td>
+                          {status === 'finished' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {/* Checked Checkbox - Clicking unchecks and moves to Active */}
+                              <label style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                color: '#166534',
+                                background: '#dcfce7',
+                                border: '1px solid #86efac',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                userSelect: 'none'
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={true}
+                                  onChange={() => handleMarkStatus(b.slotId, 'active', b.fullName)}
+                                  title="Uncheck to return to Active schedule"
+                                  style={{ cursor: 'pointer', width: '14px', height: '14px', accentColor: '#16a34a' }}
+                                />
+                                <CheckCircle2 size={13} color="#166534" />
+                                <span>Finished</span>
+                              </label>
 
-                      {/* Course & Section */}
-                      <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
-                        <span className="badge badge-neutral">
-                          {b.course}
-                        </span>
-                      </td>
+                              <button
+                                type="button"
+                                onClick={() => handleMarkStatus(b.slotId, 'active', b.fullName)}
+                                title="Revert to active schedule"
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--text-muted)',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline'
+                                }}
+                              >
+                                Undo
+                              </button>
+                            </div>
+                          )}
 
-                      {/* Project Title */}
-                      <td style={{ padding: '12px', color: 'var(--text-primary)', maxWidth: '220px' }}>
-                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.projectTitle || ''}>
-                          {b.projectTitle || '—'}
-                        </div>
-                      </td>
+                          {status === 'missed' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                color: '#92400e',
+                                background: '#fef3c7',
+                                border: '1px solid #fde68a',
+                                borderRadius: '6px',
+                                padding: '4px 8px'
+                              }}>
+                                <AlertTriangle size={13} color="#d97706" />
+                                <span>Missed</span>
+                              </span>
 
-                      {/* Email */}
-                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
-                        {b.email}
-                      </td>
+                              <button
+                                type="button"
+                                onClick={() => handleMarkStatus(b.slotId, 'active', b.fullName)}
+                                title="Revert to active schedule"
+                                style={{
+                                  background: 'var(--bg-subtle)',
+                                  border: '1px solid var(--border-medium)',
+                                  color: 'var(--text-secondary)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  padding: '3px 8px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <RotateCcw size={11} />
+                                <span>Reactivate</span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
 
-                      {/* Reference ID */}
-                      <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-disabled)' }}>
-                        {b.id}
-                      </td>
+                        {/* Scheduled Day & Date Column */}
+                        <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Calendar size={14} color="var(--mapua-crimson)" />
+                            <span>{getFormattedDateLabel(b.date)}</span>
+                          </div>
+                        </td>
 
-                      {/* Remove Button */}
-                      <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveStudent(b)}
-                          disabled={isCancelling}
-                          className="btn btn-outline-danger"
-                          style={{ padding: '5px 10px', fontSize: '0.75rem' }}
-                          title="Remove this student and free up the slot"
-                        >
-                          <UserX size={13} />
-                          <span>Remove Student</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        {/* Time Slot Column */}
+                        <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--mapua-crimson)', whiteSpace: 'nowrap' }}>
+                          {b.timeDisplay}
+                        </td>
+
+                        {/* Student Name */}
+                        <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {b.fullName}
+                        </td>
+
+                        {/* Student Number */}
+                        <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                          {b.studentNumber}
+                        </td>
+
+                        {/* Gender */}
+                        <td style={{ padding: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                          {b.gender || '—'}
+                        </td>
+
+                        {/* Course & Section */}
+                        <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
+                          <span className="badge badge-neutral">
+                            {b.course}
+                          </span>
+                        </td>
+
+                        {/* Project Title with Inline Edit Icon */}
+                        <td style={{ padding: '12px', color: 'var(--text-primary)', minWidth: '180px', maxWidth: '240px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                            <span 
+                              style={{
+                                fontSize: '0.8125rem',
+                                fontWeight: b.projectTitle ? 600 : 400,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                color: b.projectTitle ? 'var(--text-primary)' : 'var(--text-disabled)',
+                                fontStyle: b.projectTitle ? 'normal' : 'italic'
+                              }} 
+                              title={b.projectTitle || 'Click edit to set title'}
+                            >
+                              {b.projectTitle || '— (No title set)'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditTitle(b)}
+                              title="Edit Project Title"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '3px',
+                                color: 'var(--mapua-crimson)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                borderRadius: '4px',
+                                flexShrink: 0
+                              }}
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Email */}
+                        <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                          {b.email}
+                        </td>
+
+                        {/* Reference ID */}
+                        <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-disabled)' }}>
+                          {b.id}
+                        </td>
+
+                        {/* Remove Button */}
+                        <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveStudent(b)}
+                            disabled={isCancelling}
+                            className="btn btn-outline-danger"
+                            style={{ padding: '5px 10px', fontSize: '0.75rem' }}
+                            title="Remove this student and free up the slot"
+                          >
+                            <UserX size={13} />
+                            <span>Remove Student</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Card List View */}
             <div className="admin-mobile-card-list">
-              {filteredBookings.map((b) => (
-                <div key={b.slotId} className="admin-booking-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                        {b.fullName}
+              {filteredBookings.map((b) => {
+                const status = b.attendanceStatus || 'active';
+                return (
+                  <div key={b.slotId} className="admin-booking-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                          {b.fullName}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                          ID: {b.studentNumber} {b.gender ? `• ${b.gender}` : ''}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                        ID: {b.studentNumber} {b.gender ? `• ${b.gender}` : ''}
-                      </div>
+                      <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
+                        {b.course}
+                      </span>
                     </div>
-                    <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
-                      {b.course}
-                    </span>
-                  </div>
 
-                  {b.projectTitle && (
+                    {/* Attendance Controls in Mobile Card */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'var(--bg-subtle)',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      marginBottom: '8px'
+                    }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Defense Status:
+                      </span>
+                      {status === 'active' && (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkStatus(b.slotId, 'finished', b.fullName)}
+                            style={{
+                              background: '#dcfce7',
+                              border: '1px solid #86efac',
+                              color: '#166534',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Mark Finished
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkStatus(b.slotId, 'missed', b.fullName)}
+                            style={{
+                              background: '#fef3c7',
+                              border: '1px solid #fde68a',
+                              color: '#92400e',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ⚠️ Mark Missed
+                          </button>
+                        </div>
+                      )}
+                      {status === 'finished' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534' }}>
+                            ✓ Finished
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkStatus(b.slotId, 'active', b.fullName)}
+                            style={{ background: 'none', border: 'none', textDecoration: 'underline', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer' }}
+                          >
+                            Undo
+                          </button>
+                        </div>
+                      )}
+                      {status === 'missed' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400e' }}>
+                            ⚠️ Missed
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkStatus(b.slotId, 'active', b.fullName)}
+                            style={{ background: 'none', border: 'none', textDecoration: 'underline', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer' }}
+                          >
+                            Reactivate
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Project Title Row */}
                     <div style={{
                       fontSize: '0.8rem',
                       fontWeight: 600,
                       color: 'var(--text-primary)',
                       marginBottom: '8px',
-                      padding: '5px 8px',
+                      padding: '6px 10px',
                       background: 'rgba(217, 38, 38, 0.05)',
                       borderRadius: '4px',
-                      borderLeft: '3px solid var(--mapua-crimson)'
+                      borderLeft: '3px solid var(--mapua-crimson)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '8px'
                     }}>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Project Title</span>
-                      {b.projectTitle}
+                      <div>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Project Title
+                        </span>
+                        <span>{b.projectTitle || '— (No title set)'}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditTitle(b)}
+                        title="Edit Project Title"
+                        style={{ background: 'none', border: 'none', color: 'var(--mapua-crimson)', cursor: 'pointer', padding: '2px' }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
                     </div>
-                  )}
 
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'var(--bg-subtle)',
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    marginBottom: '8px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
-                      <Clock size={14} />
-                      <span>{b.timeDisplay}</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'var(--bg-subtle)',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      marginBottom: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
+                        <Clock size={14} />
+                        <span>{b.timeDisplay}</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        {getFormattedDateLabel(b.date)}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      {getFormattedDateLabel(b.date)}
+
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                      marginBottom: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                        <Mail size={12} color="var(--text-muted)" />
+                        <span>{b.email}</span>
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-disabled)' }}>
+                        #{b.id?.slice(0, 8)}
+                      </span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStudent(b)}
+                      disabled={isCancelling}
+                      className="btn btn-outline-danger"
+                      style={{ width: '100%', padding: '8px', fontSize: '0.8125rem' }}
+                    >
+                      <UserX size={14} />
+                      <span>Remove Student Reservation</span>
+                    </button>
                   </div>
-
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    fontSize: '0.75rem',
-                    color: 'var(--text-muted)',
-                    marginBottom: '10px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
-                      <Mail size={12} color="var(--text-muted)" />
-                      <span>{b.email}</span>
-                    </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-disabled)' }}>
-                      #{b.id?.slice(0, 8)}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveStudent(b)}
-                    disabled={isCancelling}
-                    className="btn btn-outline-danger"
-                    style={{ width: '100%', padding: '8px', fontSize: '0.8125rem' }}
-                  >
-                    <UserX size={14} />
-                    <span>Remove Student Reservation</span>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
       </div>
+
+      {/* Edit Project Title Modal */}
+      {editingTitleBooking && (
+        <div className="modal-overlay" style={{ zIndex: 1250 }}>
+          <div className="modal-content" style={{ maxWidth: '480px' }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={18} color="var(--mapua-crimson)" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  Edit Project Title
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTitleBooking(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProjectTitle} style={{ padding: '20px' }}>
+              <div style={{ marginBottom: '14px', fontSize: '0.85rem' }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {editingTitleBooking.fullName}
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                  Student ID: {editingTitleBooking.studentNumber} • {editingTitleBooking.course}
+                </div>
+                <div style={{ color: 'var(--mapua-crimson)', fontSize: '0.78rem', fontWeight: 600, marginTop: '4px' }}>
+                  {editingTitleBooking.timeDisplay} • {getFormattedDateLabel(editingTitleBooking.date)}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>
+                  Project Title:
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingTitleText}
+                  onChange={(e) => setEditingTitleText(e.target.value)}
+                  placeholder="e.g. AI-Powered Healthcare Diagnostics System"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '0.875rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-medium)',
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-sans)',
+                    resize: 'vertical'
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingTitleBooking(null)}
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingTitle}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '0.85rem', gap: '6px' }}
+                >
+                  <Save size={14} />
+                  <span>{isSavingTitle ? 'Saving...' : 'Save Title'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Custom Removal Confirmation Modal */}
       {studentToRemove && (

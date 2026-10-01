@@ -69,18 +69,20 @@ export async function fetchAllBookings() {
 }
 
 export async function submitBooking(bookingPayload) {
-  const { slotId, date, timeDisplay, fullName, studentNumber, course, email } = bookingPayload;
+  const { slotId, date, timeDisplay, fullName, studentNumber, course, email, projectTitle } = bookingPayload;
   
   const booking = {
     id: `BKG-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
     slotId,
     date,
     timeDisplay,
-    fullName: fullName.trim(),
-    studentNumber: studentNumber.trim(),
+    fullName: (fullName || '').trim(),
+    studentNumber: (studentNumber || '').trim(),
     gender: (bookingPayload.gender || '').trim(),
-    course: course.trim(),
-    email: email.trim().toLowerCase(),
+    course: (course || '').trim(),
+    projectTitle: (projectTitle || bookingPayload.projectTitle || '').trim(),
+    email: (email || '').trim().toLowerCase(),
+    attendanceStatus: 'active', // 'active' | 'finished' | 'missed'
     createdAt: new Date().toISOString(),
   };
 
@@ -219,6 +221,101 @@ export async function cancelBooking(slotId) {
   }
 
   return { success: true };
+}
+
+export async function updateBookingAttendance(slotId, attendanceStatus) {
+  const current = getLocalBookings();
+  const updated = current.map(b => {
+    if (b.slotId === slotId) {
+      return { 
+        ...b, 
+        attendanceStatus, 
+        attendanceUpdatedAt: new Date().toISOString() 
+      };
+    }
+    return b;
+  });
+  saveLocalBookings(updated);
+
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      await setDoc(doc(db, 'bookings', slotId), { 
+        attendanceStatus, 
+        attendanceUpdatedAt: new Date().toISOString() 
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Firestore attendance status update error:', e);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  return { success: true, updatedBookings: updated };
+}
+
+export async function batchUpdateBookingAttendance(slotIds, attendanceStatus) {
+  const slotIdSet = new Set(slotIds);
+  const current = getLocalBookings();
+  const updated = current.map(b => {
+    if (slotIdSet.has(b.slotId)) {
+      return { 
+        ...b, 
+        attendanceStatus, 
+        attendanceUpdatedAt: new Date().toISOString() 
+      };
+    }
+    return b;
+  });
+  saveLocalBookings(updated);
+
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      const promises = slotIds.map(id => 
+        setDoc(doc(db, 'bookings', id), { 
+          attendanceStatus, 
+          attendanceUpdatedAt: new Date().toISOString() 
+        }, { merge: true })
+      );
+      await Promise.all(promises);
+    } catch (e) {
+      console.warn('Firestore batch attendance update error:', e);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  return { success: true, updatedBookings: updated };
+}
+
+export async function updateBookingProjectTitle(slotId, projectTitle) {
+  const cleanTitle = (projectTitle || '').trim();
+  const current = getLocalBookings();
+  const updated = current.map(b => {
+    if (b.slotId === slotId) {
+      return { 
+        ...b, 
+        projectTitle: cleanTitle, 
+        updatedAt: new Date().toISOString() 
+      };
+    }
+    return b;
+  });
+  saveLocalBookings(updated);
+
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      await setDoc(doc(db, 'bookings', slotId), { 
+        projectTitle: cleanTitle, 
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Firestore projectTitle update error:', e);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  return { success: true, updatedBookings: updated };
 }
 
 // Real-time synchronization subscriber
