@@ -7,6 +7,7 @@ import StudentRetractModal from './components/StudentRetractModal';
 import AdminDashboard from './components/AdminDashboard';
 import AdminAuthModal from './components/AdminAuthModal';
 import FirebaseModal from './components/FirebaseModal';
+import RoleLoginPage from './components/RoleLoginPage';
 import { getAllSlotsForDate } from './utils/slotGenerator';
 import { 
   fetchAllBookings, 
@@ -20,6 +21,7 @@ import {
   updateAllowedDates, 
   subscribeToAllowedDates 
 } from './services/scheduleSettings';
+import { getSavedSession, saveSession, clearSession } from './services/instructorAuth';
 import { getFirebaseDb } from './services/firebase';
 import { sendRetractionEmail, sendBookingConfirmationEmail } from './services/emailService';
 
@@ -36,6 +38,9 @@ export default function App() {
     return localStorage.getItem('mapua_theme') || 'mapua';
   });
 
+  // User Role Session: null (not logged in) | { role: 'student' } | { role: 'instructor', email: string }
+  const [currentUser, setCurrentUser] = useState(() => getSavedSession());
+
   const [allowedDates, setAllowedDates] = useState(() => getLocalAllowedDates());
   const [date, setDate] = useState(() => {
     const initial = getLocalAllowedDates();
@@ -47,14 +52,20 @@ export default function App() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookings, setBookings] = useState([]);
   
-  const [currentTab, setCurrentTab] = useState('booking'); // 'booking' | 'admin'
+  const [currentTab, setCurrentTab] = useState(() => {
+    const s = getSavedSession();
+    return s?.role === 'instructor' ? 'admin' : 'booking';
+  });
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
+    const s = getSavedSession();
+    return s?.role === 'instructor';
+  });
   const [showAdminAuth, setShowAdminAuth] = useState(false);
   const [showRetractModal, setShowRetractModal] = useState(false);
   const [showFirebaseModal, setShowFirebaseModal] = useState(false);
@@ -190,6 +201,35 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    clearSession();
+    setCurrentUser(null);
+    setIsAdminUnlocked(false);
+    setCurrentTab('booking');
+    setSelectedSlot(null);
+  };
+
+  // If user is not yet authenticated as Student or Instructor, show Login Portal
+  if (!currentUser) {
+    return (
+      <RoleLoginPage
+        onLoginStudent={() => {
+          const session = { role: 'student' };
+          saveSession(session);
+          setCurrentUser(session);
+          setCurrentTab('booking');
+        }}
+        onLoginInstructor={(email) => {
+          const session = { role: 'instructor', email };
+          saveSession(session);
+          setCurrentUser(session);
+          setIsAdminUnlocked(true);
+          setCurrentTab('admin');
+        }}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Navigation */}
@@ -202,6 +242,8 @@ export default function App() {
         bookingsCount={bookings.length}
         theme={theme}
         setTheme={setTheme}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -309,11 +351,14 @@ export default function App() {
         onRetract={handleCancelBooking}
       />
 
-      {/* Instructor PIN Auth Modal */}
+      {/* Instructor Auth Modal */}
       <AdminAuthModal
         isOpen={showAdminAuth}
         onClose={() => setShowAdminAuth(false)}
-        onUnlock={() => {
+        onUnlock={(instructorEmail) => {
+          const session = { role: 'instructor', email: instructorEmail };
+          saveSession(session);
+          setCurrentUser(session);
           setIsAdminUnlocked(true);
           setCurrentTab('admin');
         }}

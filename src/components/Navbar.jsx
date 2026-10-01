@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Shield, Users, RotateCcw, Sun, Moon } from 'lucide-react';
+import { Calendar, Shield, Users, RotateCcw, Sun, Moon, LogOut, GraduationCap } from 'lucide-react';
 
 export default function Navbar({ 
   currentTab, 
@@ -9,7 +9,9 @@ export default function Navbar({
   openRetractModal,
   bookingsCount,
   theme,
-  setTheme
+  setTheme,
+  currentUser,
+  onLogout
 }) {
   return (
     <header className="navbar-header">
@@ -53,7 +55,7 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Quick Mobile Actions (Retract button & Theme toggle) */}
+          {/* Quick Mobile Actions (Retract, Role, Theme) */}
           <div className="navbar-mobile-actions">
             <button
               type="button"
@@ -65,6 +67,18 @@ export default function Navbar({
               <RotateCcw size={13} color="var(--mapua-crimson)" />
               <span>Manage</span>
             </button>
+
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="btn btn-secondary"
+                style={{ padding: '6px 9px' }}
+                title="Switch Role / Sign Out"
+              >
+                <LogOut size={13} color="var(--mapua-crimson)" />
+              </button>
+            )}
 
             <button
               type="button"
@@ -80,6 +94,36 @@ export default function Navbar({
 
         {/* Right Navigation & Tools (Desktop) */}
         <div className="navbar-tools-section navbar-desktop-tools">
+          {/* User Role Indicator & Switch Role Button */}
+          {currentUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {currentUser.role === 'instructor' ? (
+                <span className="badge badge-booked" style={{ fontSize: '0.75rem', gap: '6px' }} title={currentUser.email}>
+                  <Shield size={12} />
+                  <span>Instructor: {currentUser.email ? currentUser.email.split('@')[0] : 'Admin'}</span>
+                </span>
+              ) : (
+                <span className="badge badge-available" style={{ fontSize: '0.75rem', gap: '6px' }}>
+                  <GraduationCap size={13} />
+                  <span>Student Portal</span>
+                </span>
+              )}
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.75rem', padding: '6px 10px', gap: '5px' }}
+                  title="Switch between Student and Instructor portals"
+                >
+                  <LogOut size={12} />
+                  <span>Switch Role</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Student Retract / Lookup Booking Button */}
           <button
             type="button"
@@ -89,7 +133,7 @@ export default function Navbar({
             title="Search for your reservation and cancel/retract it"
           >
             <RotateCcw size={14} color="var(--mapua-crimson)" />
-            <span>Manage / Retract Booking</span>
+            <span>Manage / Retract</span>
           </button>
 
           {/* Theme Switcher: Light (Default) vs Dark */}
