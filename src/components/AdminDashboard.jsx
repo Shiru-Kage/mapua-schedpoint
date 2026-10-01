@@ -25,7 +25,10 @@ import {
   Check,
   XCircle,
   AlertCircle,
-  Undo2
+  Undo2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -45,6 +48,7 @@ export default function AdminDashboard({
   onBatchUpdateAttendance,
   onUpdateProjectTitle
 }) {
+  const [activeAdminTab, setActiveAdminTab] = useState('roster'); // 'roster' | 'settings'
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSession, setFilterSession] = useState('all');
   // Default to 'all' so instructor sees ALL reserved schedules across all dates by default
@@ -171,12 +175,41 @@ export default function AdminDashboard({
     setTimeout(() => setDateFeedback(''), 3000);
   };
 
-  // Extract unique dates present in bookings for the date filter dropdown
+  // Extract unique dates present in bookings and allowedDates for the date filter dropdown
   const uniqueDates = useMemo(() => {
     const datesSet = new Set(bookings.map(b => b.date).filter(Boolean));
     if (date) datesSet.add(date);
+    (allowedDates || []).forEach(d => datesSet.add(d));
     return Array.from(datesSet).sort();
-  }, [bookings, date]);
+  }, [bookings, date, allowedDates]);
+
+  const handlePrevDay = () => {
+    if (uniqueDates.length === 0) return;
+    if (filterDate === 'all') {
+      setFilterDate(uniqueDates[0]);
+      return;
+    }
+    const idx = uniqueDates.indexOf(filterDate);
+    if (idx > 0) {
+      setFilterDate(uniqueDates[idx - 1]);
+    } else {
+      setFilterDate(uniqueDates[uniqueDates.length - 1]);
+    }
+  };
+
+  const handleNextDay = () => {
+    if (uniqueDates.length === 0) return;
+    if (filterDate === 'all') {
+      setFilterDate(uniqueDates[0]);
+      return;
+    }
+    const idx = uniqueDates.indexOf(filterDate);
+    if (idx >= 0 && idx < uniqueDates.length - 1) {
+      setFilterDate(uniqueDates[idx + 1]);
+    } else {
+      setFilterDate(uniqueDates[0]);
+    }
+  };
 
   // Filter bookings: by default shows all dates unless instructor picks a specific one
   const filteredBookings = useMemo(() => {
@@ -385,13 +418,102 @@ export default function AdminDashboard({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Metrics Row */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {/* Top Header & Tab Navigation Bar */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '14px'
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '14px',
+        padding: '16px 20px',
+        background: 'var(--bg-surface)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border-medium)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
       }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              display: 'inline-block',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: 'var(--mapua-crimson)'
+            }} />
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              Instructor Control Center
+            </h2>
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+            {activeAdminTab === 'roster'
+              ? 'Student defense schedule, presentation attendance tracking, and printable rosters.'
+              : 'Configure available defense dates and customize timeslot durations.'}
+          </p>
+        </div>
+
+        {/* View Switcher Pills */}
+        <div style={{
+          display: 'flex',
+          background: 'var(--bg-subtle)',
+          padding: '4px',
+          borderRadius: '8px',
+          border: '1px solid var(--border-medium)',
+          gap: '4px'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveAdminTab('roster')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              fontSize: '0.8125rem',
+              fontWeight: activeAdminTab === 'roster' ? 700 : 500,
+              background: activeAdminTab === 'roster' ? 'var(--bg-surface)' : 'transparent',
+              color: activeAdminTab === 'roster' ? 'var(--mapua-crimson)' : 'var(--text-secondary)',
+              border: activeAdminTab === 'roster' ? '1px solid var(--border-medium)' : '1px solid transparent',
+              borderRadius: '6px',
+              boxShadow: activeAdminTab === 'roster' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <ClipboardList size={15} />
+            <span>Defense Roster ({totalAllBookings})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveAdminTab('settings')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              fontSize: '0.8125rem',
+              fontWeight: activeAdminTab === 'settings' ? 700 : 500,
+              background: activeAdminTab === 'settings' ? 'var(--bg-surface)' : 'transparent',
+              color: activeAdminTab === 'settings' ? 'var(--mapua-crimson)' : 'var(--text-secondary)',
+              border: activeAdminTab === 'settings' ? '1px solid var(--border-medium)' : '1px solid transparent',
+              borderRadius: '6px',
+              boxShadow: activeAdminTab === 'settings' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <Sliders size={15} />
+            <span>Schedule Settings</span>
+          </button>
+        </div>
+      </div>
+
+      {/* TAB 1: DEFENSE ROSTER (METRICS) */}
+      {activeAdminTab === 'roster' && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '14px'
+        }}>
         <div className="academic-card" style={{ padding: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
@@ -476,8 +598,12 @@ export default function AdminDashboard({
           </div>
         </div>
       </div>
+      )}
 
-      {/* OJT Scheduling Dates Availability Manager Card */}
+      {/* TAB 2: SCHEDULE SETTINGS (DATES & TIMESLOT CONFIGURATION) */}
+      {activeAdminTab === 'settings' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* OJT Scheduling Dates Availability Manager Card */}
       <div className="academic-card" style={{ padding: '20px' }}>
         <div style={{
           display: 'flex',
@@ -947,9 +1073,14 @@ export default function AdminDashboard({
           </div>
         </form>
       </div>
+        </div>
+      )}
 
-      {/* Controls Bar: Search, Date Filter, Session Filter, Export */}
-      <div className="academic-card" style={{ padding: '16px' }}>
+      {/* TAB 1: DEFENSE ROSTER (CONTROLS & TABLE) */}
+      {activeAdminTab === 'roster' && (
+        <>
+          {/* Controls Bar: Search, Date Filter, Session Filter, Export */}
+          <div className="academic-card" style={{ padding: '16px' }}>
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -979,30 +1110,50 @@ export default function AdminDashboard({
               />
             </div>
 
-            {/* Date Filter (Defaults to All Dates) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Calendar size={15} color="var(--text-muted)" />
-              <select
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: '6px',
-                  padding: '7px 10px',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8125rem',
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 600
-                }}
+            {/* Date Filter with Day Stepper Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button
+                type="button"
+                onClick={handlePrevDay}
+                className="btn btn-secondary"
+                style={{ padding: '6px 8px', fontSize: '0.78rem' }}
+                title="Previous defense date"
               >
-                <option value="all">All Dates ({totalAllBookings} Bookings)</option>
-                {uniqueDates.map(d => (
-                  <option key={d} value={d}>
-                    {getFormattedDateLabel(d)}
-                  </option>
-                ))}
-              </select>
+                <ChevronLeft size={14} />
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Calendar size={15} color="var(--text-muted)" />
+                <select
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '6px',
+                    padding: '7px 10px',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8125rem',
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 600
+                  }}
+                >
+                  <option value="all">All Dates ({totalAllBookings} Bookings)</option>
+                  {uniqueDates.map(d => (
+                    <option key={d} value={d}>
+                      {getFormattedDateLabel(d)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleNextDay}
+                className="btn btn-secondary"
+                style={{ padding: '6px 8px', fontSize: '0.78rem' }}
+                title="Next defense date"
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
 
             {/* Session Filter */}
@@ -1857,6 +2008,8 @@ export default function AdminDashboard({
           </>
         )}
       </div>
+        </>
+      )}
 
       {/* Edit Project Title Modal */}
       {editingTitleBooking && (
