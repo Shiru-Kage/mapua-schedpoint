@@ -241,24 +241,23 @@ export function verifyResetCode(email, inputCode) {
 
 /**
  * Session storage management
+ * The default and primary page is always the login page first upon visiting.
  */
 export function getSavedSession() {
   try {
-    const raw = sessionStorage.getItem(LOCAL_STORAGE_SESSION_KEY) || localStorage.getItem(LOCAL_STORAGE_SESSION_KEY);
-    if (raw) return JSON.parse(raw);
+    localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
+    sessionStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
   } catch (e) {
-    console.warn('Error reading session:', e);
+    // ignore
   }
   return null;
 }
 
 export function saveSession(sessionData) {
   try {
-    const serialized = JSON.stringify(sessionData);
-    sessionStorage.setItem(LOCAL_STORAGE_SESSION_KEY, serialized);
-    localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, serialized);
+    sessionStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(sessionData));
   } catch (e) {
-    console.warn('Error saving session:', e);
+    // ignore
   }
 }
 
@@ -267,6 +266,6 @@ export function clearSession() {
     sessionStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
     localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
   } catch (e) {
-    console.warn('Error clearing session:', e);
+    // ignore
   }
 }

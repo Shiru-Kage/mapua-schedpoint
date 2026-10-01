@@ -38,8 +38,13 @@ export default function App() {
     return localStorage.getItem('mapua_theme') || 'mapua';
   });
 
-  // User Role Session: null (not logged in) | { role: 'student' } | { role: 'instructor', email: string }
-  const [currentUser, setCurrentUser] = useState(() => getSavedSession());
+  // Default and primary page is ALWAYS the Login Portal first
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      localStorage.removeItem('ojt_user_session');
+    } catch (e) {}
+    return null;
+  });
 
   const [allowedDates, setAllowedDates] = useState(() => getLocalAllowedDates());
   const [date, setDate] = useState(() => {
@@ -52,20 +57,14 @@ export default function App() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookings, setBookings] = useState([]);
   
-  const [currentTab, setCurrentTab] = useState(() => {
-    const s = getSavedSession();
-    return s?.role === 'instructor' ? 'admin' : 'booking';
-  });
+  const [currentTab, setCurrentTab] = useState('booking'); // 'booking' | 'admin'
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
-    const s = getSavedSession();
-    return s?.role === 'instructor';
-  });
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [showAdminAuth, setShowAdminAuth] = useState(false);
   const [showRetractModal, setShowRetractModal] = useState(false);
   const [showFirebaseModal, setShowFirebaseModal] = useState(false);
