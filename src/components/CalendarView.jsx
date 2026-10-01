@@ -129,128 +129,61 @@ export default function CalendarView({
 
   return (
     <div className="academic-card" style={{ padding: '24px' }}>
-      {/* Header Bar */}
+      {/* Streamlined Header Bar */}
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '16px',
-        marginBottom: '20px'
+        gap: '12px',
+        marginBottom: '16px',
+        paddingBottom: '14px',
+        borderBottom: '1px solid var(--border-light)'
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CalendarIcon size={18} color="var(--mapua-crimson)" />
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              OJT Defense Scheduler
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              OJT Defense Schedule
             </h2>
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-            {getFormattedDateLabel(date)} • {slotsData?.slotMinutes || 10}-Minute Defense Windows
+            {getFormattedDateLabel(date)} • {slotsData?.slotMinutes || 10}-Minute Presentation Slots
           </p>
         </div>
 
-        {/* View Mode Toggle: Timeline vs Grid */}
-        <div className="segmented-control">
-          <button
-            type="button"
-            onClick={() => setViewMode('timeline')}
-            className={`segmented-control-item ${viewMode === 'timeline' ? 'active' : ''}`}
-          >
-            <List size={14} />
-            <span>Timeline</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={`segmented-control-item ${viewMode === 'grid' ? 'active' : ''}`}
-          >
-            <Grid size={14} />
-            <span>Grid</span>
-          </button>
+        {/* Quick Availability Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="badge badge-available" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
+            {availableCount} Available
+          </span>
+          <span className="badge badge-booked" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
+            {bookedCount} Reserved
+          </span>
         </div>
       </div>
 
-      {/* Date Navigation & Selector Controls */}
-      <div style={{ marginBottom: '20px' }}>
+      {/* Primary Defense Date Selector Cards */}
+      <div style={{ marginBottom: '18px' }}>
         <div style={{
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '10px',
-          marginBottom: '10px'
+          alignItems: 'center',
+          marginBottom: '8px'
         }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Select Date & Schedule View
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Select Defense Date
           </span>
-
-          {/* Quick Date Stepper & Picker */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              type="button"
-              onClick={() => shiftDateByStep(-1)}
-              className="btn btn-secondary"
-              style={{ padding: '5px 8px', fontSize: '0.75rem' }}
-              title="Previous Available Date"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const today = getTodayString();
-                const target = (allowedDates && allowedDates.includes(today))
-                  ? today
-                  : (allowedDates && allowedDates.length > 0 ? allowedDates[0] : today);
-                setDate(target);
-                setSelectedSlot(null);
-              }}
-              className="btn btn-secondary"
-              style={{ padding: '5px 10px', fontSize: '0.75rem', fontWeight: 600 }}
-              title="Jump to Current Scheduled Date"
-            >
-              Today
-            </button>
-
-            <button
-              type="button"
-              onClick={() => shiftDateByStep(1)}
-              className="btn btn-secondary"
-              style={{ padding: '5px 8px', fontSize: '0.75rem' }}
-              title="Next Available Date"
-            >
-              <ChevronRight size={14} />
-            </button>
-
-            {/* Date Input */}
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => {
-                if (e.target.value) {
-                  setDate(e.target.value);
-                  setSelectedSlot(null);
-                }
-              }}
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '6px',
-                padding: '5px 8px',
-                fontSize: '0.8125rem',
-                color: 'var(--text-primary)',
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            />
-          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            Showing {dateStrip.length} authorized presentation dates
+          </span>
         </div>
 
-        {/* Dynamic 7-Day Date Selector Strip Centered on Active Date */}
-        <div className="date-strip-container">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '10px'
+        }}>
           {dateStrip.map((item) => {
             const isSelected = item.dateStr === date;
             return (
@@ -261,36 +194,38 @@ export default function CalendarView({
                   setDate(item.dateStr);
                   setSelectedSlot(null);
                 }}
-                className={`date-strip-item ${isSelected ? 'active' : ''}`}
                 style={{
-                  minWidth: '100px',
-                  position: 'relative'
+                  background: isSelected ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
+                  color: isSelected ? '#ffffff' : 'var(--text-primary)',
+                  border: isSelected ? '1.5px solid var(--mapua-crimson)' : '1px solid var(--border-medium)',
+                  borderRadius: '8px',
+                  padding: '12px 10px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isSelected ? '0 4px 12px rgba(217, 38, 38, 0.22)' : 'none',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, opacity: isSelected ? 0.95 : 0.7 }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', opacity: isSelected ? 0.9 : 0.6, letterSpacing: '0.04em' }}>
                   {item.dayName}
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0', fontFamily: 'var(--font-mono)' }}>
-                  {item.dayNum}
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, margin: '2px 0', fontFamily: 'var(--font-mono)' }}>
+                  {item.monthName} {item.dayNum}
                 </div>
-                <div style={{ fontSize: '0.6875rem', fontWeight: 600 }}>
-                  {item.monthName}
-                </div>
-
                 <div style={{
-                  marginTop: '6px',
                   fontSize: '0.6875rem',
                   fontWeight: 700,
-                  borderRadius: '4px',
-                  padding: '2px 6px',
-                  background: isSelected 
-                    ? 'rgba(255, 255, 255, 0.25)' 
-                    : (item.dayBookedCount > 0 ? 'var(--mapua-gold-bg)' : 'var(--status-available-bg)'),
-                  color: isSelected 
-                    ? '#ffffff' 
-                    : (item.dayBookedCount > 0 ? 'var(--mapua-gold)' : 'var(--status-available-text)')
+                  borderRadius: '999px',
+                  padding: '2px 8px',
+                  marginTop: '4px',
+                  background: isSelected ? 'rgba(255, 255, 255, 0.2)' : (item.dayOpenCount > 0 ? '#DCFCE7' : '#FEE2E2'),
+                  color: isSelected ? '#ffffff' : (item.dayOpenCount > 0 ? '#166534' : '#991B1B')
                 }}>
-                  {item.dayBookedCount === 0 ? '42 Open' : `${item.dayBookedCount} Booked`}
+                  {item.dayOpenCount > 0 ? `${item.dayOpenCount} slots open` : 'Full'}
                 </div>
               </button>
             );
@@ -298,24 +233,34 @@ export default function CalendarView({
         </div>
       </div>
 
-      {/* Session Filter Bar */}
+      {/* Clean Session Filter Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '10px',
-        padding: '10px 12px',
+        padding: '8px 12px',
         background: 'var(--bg-subtle)',
         borderRadius: 'var(--radius-md)',
         marginBottom: '16px',
         border: '1px solid var(--border-light)'
       }}>
-        <div className="segmented-control" style={{ flex: '1 1 auto' }}>
+        <div className="segmented-control" style={{ width: '100%' }}>
+          <button
+            type="button"
+            onClick={() => setSessionFilter('all')}
+            className={`segmented-control-item ${sessionFilter === 'all' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
+          >
+            <span>All Sessions</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setSessionFilter('morning')}
             className={`segmented-control-item ${sessionFilter === 'morning' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
             title={`Morning (${slotsData?.morningRange || '8:00 – 11:00 AM'})`}
           >
             <Sun size={14} />
@@ -326,29 +271,12 @@ export default function CalendarView({
             type="button"
             onClick={() => setSessionFilter('afternoon')}
             className={`segmented-control-item ${sessionFilter === 'afternoon' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
             title={`Afternoon (${slotsData?.afternoonRange || '1:00 – 4:00 PM'})`}
           >
             <Sunset size={14} />
             <span>Afternoon ({slotsData?.afternoonLabel || '1–4 PM'})</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setSessionFilter('all')}
-            className={`segmented-control-item ${sessionFilter === 'all' ? 'active' : ''}`}
-          >
-            <span>All</span>
-          </button>
-        </div>
-
-        {/* High-Contrast Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <span className="badge badge-available">
-            {availableCount} Available
-          </span>
-          <span className="badge badge-booked">
-            {bookedCount} Reserved
-          </span>
         </div>
       </div>
 

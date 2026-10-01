@@ -345,6 +345,7 @@ export default function App() {
               <div id="student-booking-form-section" className="booking-form-scroll-col">
                 <BookingForm
                   selectedSlot={selectedSlot}
+                  onDeselectSlot={() => setSelectedSlot(null)}
                   onSubmit={handleBookingSubmit}
                   isSubmitting={isSubmitting}
                   errorMessage={errorMessage}

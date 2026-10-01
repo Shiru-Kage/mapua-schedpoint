@@ -4,6 +4,7 @@ import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function BookingForm({
   selectedSlot,
+  onDeselectSlot,
   onSubmit,
   isSubmitting,
   errorMessage,
@@ -96,87 +97,149 @@ export default function BookingForm({
     onSubmit(formData);
   };
 
+  // If no slot is selected yet, render a focused, uncluttered invitation card
+  if (!selectedSlot) {
+    return (
+      <div className="academic-card" style={{ padding: '36px 24px', textAlign: 'center' }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
+          background: 'var(--mapua-crimson-subtle)',
+          border: '1px solid var(--mapua-crimson-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--mapua-crimson)',
+          margin: '0 auto 16px auto',
+          boxShadow: '0 4px 12px rgba(217, 38, 38, 0.08)'
+        }}>
+          <Clock size={28} />
+        </div>
+
+        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+          Select a Time Slot to Begin
+        </h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '320px', margin: '0 auto 18px auto', lineHeight: 1.5 }}>
+          Choose an open defense time slot on the left schedule to enter your student credentials and secure your schedule.
+        </p>
+
+        <div style={{
+          maxWidth: '340px',
+          margin: '0 auto 20px auto',
+          padding: '12px 16px',
+          background: 'var(--bg-subtle)',
+          borderRadius: '8px',
+          border: '1px solid var(--border-light)',
+          textAlign: 'left',
+          fontSize: '0.78rem',
+          color: 'var(--text-secondary)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#16a34a', fontWeight: 800 }}>✓</span>
+            <span>Real-time instant slot reservation</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#16a34a', fontWeight: 800 }}>✓</span>
+            <span>Anti-collision slot lock guarantee</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#16a34a', fontWeight: 800 }}>✓</span>
+            <span>Confirmation pass with reference code sent to your email</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenRetractModal}
+          className="btn btn-secondary"
+          style={{ fontSize: '0.78rem', padding: '6px 14px' }}
+        >
+          Have an existing reservation? Manage or Retract
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="academic-card" style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '18px' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
-          OJT Scheduling Form
-        </h2>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
-          Enter your student details to confirm your OJT defense schedule.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+        <div>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+            OJT Scheduling Form
+          </h2>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
+            Enter your details below to confirm and lock in your slot.
+          </p>
+        </div>
+
+        {onDeselectSlot && (
+          <button
+            type="button"
+            onClick={onDeselectSlot}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+          >
+            Change Slot
+          </button>
+        )}
       </div>
 
       {/* Selected Slot Notice */}
-      {selectedSlot ? (
+      <div style={{
+        background: 'var(--status-selected-subtle)',
+        border: '1.5px solid var(--status-selected-border)',
+        borderRadius: 'var(--radius-md)',
+        padding: '14px 16px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '14px',
+        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)'
+      }}>
         <div style={{
-          background: 'var(--status-selected-subtle)',
-          border: '1.5px solid var(--status-selected-border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 16px',
-          marginBottom: '20px',
+          width: '40px',
+          height: '40px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)',
           display: 'flex',
           alignItems: 'center',
-          gap: '14px',
-          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)'
+          justifyContent: 'center',
+          flexShrink: 0,
+          boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)'
         }}>
+          <Clock size={20} color="#ffffff" />
+        </div>
+        <div style={{ flex: 1 }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)'
+            gap: '6px',
+            fontSize: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            color: 'var(--status-selected-accent)',
+            fontWeight: 700
           }}>
-            <Clock size={20} color="#ffffff" />
+            <span>Selected Time Slot ({selectedSlot.sessionTitle})</span>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              color: 'var(--status-selected-accent)',
-              fontWeight: 700
-            }}>
-              <span>Selected Time Slot ({selectedSlot.sessionTitle})</span>
-            </div>
-            <div style={{
-              fontSize: '1.2rem',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              fontFamily: 'var(--font-mono)',
-              marginTop: '1px'
-            }}>
-              {selectedSlot.timeDisplay}
-            </div>
-            <div style={{ fontSize: '0.775rem', color: 'var(--status-selected-accent)', fontWeight: 600, marginTop: '1px' }}>
-              {getFormattedDateLabel(selectedSlot.date)}
-            </div>
+          <div style={{
+            fontSize: '1.2rem',
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-mono)',
+            marginTop: '1px'
+          }}>
+            {selectedSlot.timeDisplay}
+          </div>
+          <div style={{ fontSize: '0.775rem', color: 'var(--status-selected-accent)', fontWeight: 600, marginTop: '1px' }}>
+            {getFormattedDateLabel(selectedSlot.date)}
           </div>
         </div>
-      ) : (
-        <div style={{
-          background: 'var(--bg-subtle)',
-          border: '1px dashed var(--border-medium)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <Clock size={18} color="var(--text-muted)" />
-          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-            <strong>No time slot selected yet.</strong> Please select an open slot from the schedule on the left.
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Duplicate Submission Warning Banner */}
       {duplicateBooking && (
