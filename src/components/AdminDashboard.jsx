@@ -10,7 +10,12 @@ import {
   Filter,
   X,
   AlertTriangle,
-  Mail
+  Mail,
+  Trash2,
+  Plus,
+  RotateCcw,
+  CheckCircle2,
+  CalendarPlus
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -20,13 +25,61 @@ export default function AdminDashboard({
   setDate,
   slotsData,
   onCancelBooking,
-  isCancelling
+  isCancelling,
+  allowedDates = [],
+  onUpdateAllowedDates
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSession, setFilterSession] = useState('all');
   // Default to 'all' so instructor sees ALL reserved schedules across all dates by default
   const [filterDate, setFilterDate] = useState('all');
   const [studentToRemove, setStudentToRemove] = useState(null);
+
+  // Date Management State
+  const [newDateInput, setNewDateInput] = useState('');
+  const [dateFeedback, setDateFeedback] = useState('');
+
+  const handleAddAllowedDate = async (e) => {
+    e.preventDefault();
+    if (!newDateInput) return;
+    if (allowedDates.includes(newDateInput)) {
+      setDateFeedback(`Notice: ${newDateInput} is already an active scheduling date.`);
+      setTimeout(() => setDateFeedback(''), 3000);
+      return;
+    }
+    const updated = [...allowedDates, newDateInput].sort();
+    if (onUpdateAllowedDates) {
+      await onUpdateAllowedDates(updated);
+    }
+    setDateFeedback(`✓ Added ${getFormattedDateLabel(newDateInput)} to active schedule.`);
+    setNewDateInput('');
+    setTimeout(() => setDateFeedback(''), 3000);
+  };
+
+  const handleRemoveAllowedDate = async (dateStr) => {
+    const bookingsOnDate = bookings.filter(b => b.date === dateStr).length;
+    if (bookingsOnDate > 0) {
+      const confirmRemove = window.confirm(
+        `Warning: There are ${bookingsOnDate} student reservations on ${getFormattedDateLabel(dateStr)}. Are you sure you want to remove this date from the available schedule? (Existing reservations will remain saved).`
+      );
+      if (!confirmRemove) return;
+    }
+    const updated = allowedDates.filter(d => d !== dateStr);
+    if (onUpdateAllowedDates) {
+      await onUpdateAllowedDates(updated);
+    }
+    setDateFeedback(`Removed ${getFormattedDateLabel(dateStr)} from active schedule.`);
+    setTimeout(() => setDateFeedback(''), 3000);
+  };
+
+  const handleResetDefaults = async () => {
+    const defaultDates = ['2026-10-05', '2026-10-07', '2026-10-12', '2026-10-14'];
+    if (onUpdateAllowedDates) {
+      await onUpdateAllowedDates(defaultDates);
+    }
+    setDateFeedback(`✓ Reset schedule to default dates: Oct 5, 7, 12, 14`);
+    setTimeout(() => setDateFeedback(''), 3000);
+  };
 
   // Extract unique dates present in bookings for the date filter dropdown
   const uniqueDates = useMemo(() => {
@@ -243,6 +296,187 @@ export default function AdminDashboard({
             Booked afternoon presentation appointments
           </div>
         </div>
+      </div>
+
+      {/* OJT Scheduling Dates Availability Manager Card */}
+      <div className="academic-card" style={{ padding: '20px' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          paddingBottom: '14px',
+          borderBottom: '1px solid var(--border-light)',
+          marginBottom: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Calendar size={18} color="var(--mapua-crimson)" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                OJT Scheduling Available Dates Manager
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+              Designate which dates are available for student reservation. Currently active dates are displayed below.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.75rem', padding: '6px 10px', gap: '6px' }}
+            title="Reset to default dates: Oct 5, 7, 12, 14"
+          >
+            <RotateCcw size={13} />
+            <span>Reset to Default (Oct 5, 7, 12, 14)</span>
+          </button>
+        </div>
+
+        {/* Date Feedback Notice */}
+        {dateFeedback && (
+          <div style={{
+            fontSize: '0.8rem',
+            color: '#166534',
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <CheckCircle2 size={16} color="#166534" />
+            <span>{dateFeedback}</span>
+          </div>
+        )}
+
+        {/* Active Dates Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gap: '12px',
+          marginBottom: '16px'
+        }}>
+          {allowedDates.map((dateStr) => {
+            const dateBookingsCount = bookings.filter(b => b.date === dateStr).length;
+            const isCurrentDate = dateStr === date;
+
+            return (
+              <div
+                key={dateStr}
+                style={{
+                  background: isCurrentDate ? 'var(--status-selected-subtle)' : 'var(--bg-subtle)',
+                  border: isCurrentDate ? '1.5px solid var(--status-selected-border)' : '1px solid var(--border-medium)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {getFormattedDateLabel(dateStr)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {dateStr}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAllowedDate(dateStr)}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '4px 6px',
+                      color: 'var(--mapua-crimson)',
+                      borderColor: 'var(--border-light)',
+                      background: 'transparent'
+                    }}
+                    title={`Remove ${dateStr} from available dates`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '0.75rem',
+                  paddingTop: '6px',
+                  borderTop: '1px dashed var(--border-light)'
+                }}>
+                  <span style={{ fontWeight: 600, color: dateBookingsCount > 0 ? 'var(--mapua-crimson)' : 'var(--status-available-text)' }}>
+                    {dateBookingsCount} / 42 Booked
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDate(dateStr);
+                      setFilterDate(dateStr);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--mapua-crimson)',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    Filter Table →
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add New Date Form */}
+        <form onSubmit={handleAddAllowedDate} style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 14px',
+          background: 'var(--bg-surface)',
+          border: '1px dashed var(--border-medium)',
+          borderRadius: 'var(--radius-md)'
+        }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            + Add Available Date:
+          </span>
+          <input
+            type="date"
+            value={newDateInput}
+            onChange={(e) => setNewDateInput(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              fontSize: '0.8125rem',
+              borderRadius: '6px',
+              border: '1px solid var(--border-medium)',
+              background: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 600
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!newDateInput}
+            className="btn btn-primary"
+            style={{ padding: '6px 12px', fontSize: '0.8125rem' }}
+          >
+            <CalendarPlus size={14} />
+            <span>Enable Date for Students</span>
+          </button>
+        </form>
       </div>
 
       {/* Controls Bar: Search, Date Filter, Session Filter, Export */}

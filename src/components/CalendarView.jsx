@@ -10,7 +10,8 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -32,7 +33,8 @@ export default function CalendarView({
   sessionFilter,
   setSessionFilter,
   viewMode, // 'grid' | 'timeline'
-  setViewMode
+  setViewMode,
+  allowedDates = []
 }) {
   const bookedSlotMap = useMemo(() => {
     const map = new Map();
@@ -42,57 +44,74 @@ export default function CalendarView({
     return map;
   }, [bookings]);
 
-  // Dynamically generate a 7-day strip centered around the ACTIVE selected date!
-  // If the user selects Dec 8, 2026, it centers Dec 8 in the view with days around it.
+  const isDateAllowed = useMemo(() => {
+    if (!allowedDates || allowedDates.length === 0) return true;
+    return allowedDates.includes(date);
+  }, [allowedDates, date]);
+
+  // Generate date strip based on instructor-designated allowed dates!
   const dateStrip = useMemo(() => {
-    if (!date) return [];
-    const parts = date.split('-').map(Number);
-    if (parts.length !== 3 || isNaN(parts[0])) return [];
-    
-    const [y, m, d] = parts;
-    const centerDate = new Date(y, m - 1, d);
+    // If allowedDates is provided, map directly over allowedDates
+    const targetDates = (Array.isArray(allowedDates) && allowedDates.length > 0)
+      ? allowedDates
+      : [date];
 
-    const dates = [];
-    // Show 3 days before, selected date, and 3 days after
-    for (let offset = -3; offset <= 3; offset++) {
-      const target = new Date(centerDate);
-      target.setDate(centerDate.getDate() + offset);
+    return targetDates.map(dateStr => {
+      try {
+        const parts = dateStr.split('-').map(Number);
+        const target = new Date(parts[0], parts[1] - 1, parts[2]);
 
-      const year = target.getFullYear();
-      const month = String(target.getMonth() + 1).padStart(2, '0');
-      const day = String(target.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
+        const dayName = target.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = target.getDate();
+        const monthName = target.toLocaleDateString('en-US', { month: 'short' });
 
-      const dayName = target.toLocaleDateString('en-US', { weekday: 'short' });
-      const dayNum = target.getDate();
-      const monthName = target.toLocaleDateString('en-US', { month: 'short' });
+        const dayBookedCount = bookings.filter(b => b.date === dateStr).length;
+        const dayOpenCount = Math.max(0, 42 - dayBookedCount);
 
-      const dayBookedCount = bookings.filter(b => b.date === dateStr).length;
-      const dayOpenCount = Math.max(0, 42 - dayBookedCount);
+        return {
+          dateStr,
+          dayName,
+          dayNum,
+          monthName,
+          dayBookedCount,
+          dayOpenCount,
+          isSelected: dateStr === date,
+        };
+      } catch {
+        return {
+          dateStr,
+          dayName: 'Date',
+          dayNum: dateStr,
+          monthName: '',
+          dayBookedCount: 0,
+          dayOpenCount: 42,
+          isSelected: dateStr === date,
+        };
+      }
+    });
+  }, [allowedDates, date, bookings]);
 
-      dates.push({
-        dateStr,
-        dayName,
-        dayNum,
-        monthName,
-        dayBookedCount,
-        dayOpenCount,
-        isSelected: dateStr === date,
-      });
+  // Step active date to previous or next allowed date
+  const shiftDateByStep = (direction) => {
+    if (allowedDates && allowedDates.length > 0) {
+      const currentIndex = allowedDates.indexOf(date);
+      if (currentIndex === -1) {
+        setDate(allowedDates[0]);
+        setSelectedSlot(null);
+        return;
+      }
+      const nextIndex = currentIndex + direction;
+      if (nextIndex >= 0 && nextIndex < allowedDates.length) {
+        setDate(allowedDates[nextIndex]);
+        setSelectedSlot(null);
+      }
+      return;
     }
-    return dates;
-  }, [date, bookings]);
 
-  // Step active date by day offset (-1 for prev, +1 for next)
-  const shiftDateByDays = (days) => {
     const [y, m, d] = date.split('-').map(Number);
     const target = new Date(y, m - 1, d);
-    target.setDate(target.getDate() + days);
-
-    const year = target.getFullYear();
-    const month = String(target.getMonth() + 1).padStart(2, '0');
-    const day = String(target.getDate()).padStart(2, '0');
-    const nextDate = `${year}-${month}-${day}`;
+    target.setDate(target.getDate() + direction);
+    const nextDate = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
     setDate(nextDate);
     setSelectedSlot(null);
   };
@@ -169,10 +188,10 @@ export default function CalendarView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button
               type="button"
-              onClick={() => shiftDateByDays(-1)}
+              onClick={() => shiftDateByStep(-1)}
               className="btn btn-secondary"
               style={{ padding: '5px 8px', fontSize: '0.75rem' }}
-              title="Previous Day"
+              title="Previous Available Date"
             >
               <ChevronLeft size={14} />
             </button>
@@ -180,22 +199,26 @@ export default function CalendarView({
             <button
               type="button"
               onClick={() => {
-                setDate(getTodayString());
+                const today = getTodayString();
+                const target = (allowedDates && allowedDates.includes(today))
+                  ? today
+                  : (allowedDates && allowedDates.length > 0 ? allowedDates[0] : today);
+                setDate(target);
                 setSelectedSlot(null);
               }}
               className="btn btn-secondary"
               style={{ padding: '5px 10px', fontSize: '0.75rem', fontWeight: 600 }}
-              title="Jump to Today"
+              title="Jump to Current Scheduled Date"
             >
               Today
             </button>
 
             <button
               type="button"
-              onClick={() => shiftDateByDays(1)}
+              onClick={() => shiftDateByStep(1)}
               className="btn btn-secondary"
               style={{ padding: '5px 8px', fontSize: '0.75rem' }}
-              title="Next Day"
+              title="Next Available Date"
             >
               <ChevronRight size={14} />
             </button>
@@ -328,8 +351,66 @@ export default function CalendarView({
         </div>
       </div>
 
-      {/* TIMELINE VIEW (Calendar View) */}
-      {viewMode === 'timeline' ? (
+      {/* UNAUTHORIZED DATE STATE OR TIMELINE / GRID VIEWS */}
+      {!isDateAllowed ? (
+        <div style={{
+          padding: '40px 24px',
+          textAlign: 'center',
+          background: 'var(--bg-subtle)',
+          borderRadius: 'var(--radius-md)',
+          border: '1.5px dashed var(--border-medium)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '14px'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(239, 68, 68, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--mapua-crimson)'
+          }}>
+            <AlertTriangle size={24} />
+          </div>
+          <div>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {getFormattedDateLabel(date)} is Not Open for Scheduling
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.5 }}>
+              The instructor has designated specific dates for OJT consultations and presentations. Please select one of the authorized dates below:
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '4px' }}>
+            {allowedDates.map((dStr) => (
+              <button
+                key={dStr}
+                type="button"
+                onClick={() => {
+                  setDate(dStr);
+                  setSelectedSlot(null);
+                }}
+                className="btn btn-secondary"
+                style={{
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  padding: '8px 14px',
+                  background: 'var(--bg-surface)',
+                  borderColor: 'var(--border-medium)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                📅 {getFormattedDateLabel(dStr)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : viewMode === 'timeline' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {displayedSlots.map((slot) => {
             const booking = bookedSlotMap.get(slot.id);

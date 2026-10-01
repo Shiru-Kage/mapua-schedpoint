@@ -14,6 +14,12 @@ import {
   cancelBooking, 
   subscribeToBookings 
 } from './services/bookingStorage';
+import { 
+  getLocalAllowedDates, 
+  fetchAllowedDates, 
+  updateAllowedDates, 
+  subscribeToAllowedDates 
+} from './services/scheduleSettings';
 import { getFirebaseDb } from './services/firebase';
 import { sendRetractionEmail, sendBookingConfirmationEmail } from './services/emailService';
 
@@ -30,7 +36,12 @@ export default function App() {
     return localStorage.getItem('mapua_theme') || 'mapua';
   });
 
-  const [date, setDate] = useState(getTodayString());
+  const [allowedDates, setAllowedDates] = useState(() => getLocalAllowedDates());
+  const [date, setDate] = useState(() => {
+    const initial = getLocalAllowedDates();
+    const today = getTodayString();
+    return initial.includes(today) ? today : (initial[0] || '2026-10-05');
+  });
   const [sessionFilter, setSessionFilter] = useState('morning');
   const [viewMode, setViewMode] = useState('timeline');
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -87,9 +98,34 @@ export default function App() {
     };
   }, [selectedSlot]);
 
+  // Subscribe to allowed scheduling dates configured by admin/instructor
+  useEffect(() => {
+    fetchAllowedDates().then((dates) => {
+      if (Array.isArray(dates) && dates.length > 0) {
+        setAllowedDates(dates);
+      }
+    });
+
+    const unsubAllowed = subscribeToAllowedDates((dates) => {
+      if (Array.isArray(dates) && dates.length > 0) {
+        setAllowedDates(dates);
+      }
+    });
+
+    return () => {
+      if (unsubAllowed) unsubAllowed();
+    };
+  }, []);
+
   // Student booking submission handler
   const handleBookingSubmit = async (formData) => {
     if (!selectedSlot) return;
+
+    // Check that selected date is an authorized scheduling date
+    if (allowedDates && allowedDates.length > 0 && !allowedDates.includes(selectedSlot.date)) {
+      setErrorMessage(`The selected date (${selectedSlot.date}) is not open for OJT scheduling. Please select an authorized date.`);
+      return;
+    }
 
     // Check duplicate student number locally
     const cleanId = String(formData.studentNumber || '').trim().toLowerCase();
@@ -217,6 +253,7 @@ export default function App() {
                   setSessionFilter={setSessionFilter}
                   viewMode={viewMode}
                   setViewMode={setViewMode}
+                  allowedDates={allowedDates}
                 />
               </div>
 
@@ -243,6 +280,14 @@ export default function App() {
             slotsData={slotsData}
             onCancelBooking={handleCancelBooking}
             isCancelling={isCancelling}
+            allowedDates={allowedDates}
+            onUpdateAllowedDates={async (newDates) => {
+              const res = await updateAllowedDates(newDates);
+              if (res.success && res.dates) {
+                setAllowedDates(res.dates);
+              }
+              return res;
+            }}
           />
         )}
       </main>

@@ -7,7 +7,8 @@ import {
   setDoc, 
   deleteDoc, 
   onSnapshot,
-  getDocs 
+  getDocs,
+  getDoc 
 } from 'firebase/firestore';
 
 const STORAGE_KEY = 'mapua_scheduler_firebase_config';
@@ -64,5 +65,6 @@ export {
   setDoc,
   deleteDoc,
   onSnapshot,
-  getDocs
+  getDocs,
+  getDoc
 };
