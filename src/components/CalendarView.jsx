@@ -122,11 +122,11 @@ export default function CalendarView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CalendarIcon size={18} color="var(--mapua-crimson)" />
             <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              Consultation Schedule
+              OJT Consultation Schedule
             </h2>
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-            {getFormattedDateLabel(date)} • 10-Minute Consultation Windows
+            {getFormattedDateLabel(date)} • 10-Minute OJT Windows
           </p>
         </div>
 

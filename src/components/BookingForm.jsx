@@ -99,10 +99,10 @@ export default function BookingForm({
     <div className="academic-card" style={{ padding: '24px' }}>
       <div style={{ marginBottom: '18px' }}>
         <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
-          Student Reservation Form
+          OJT Scheduling Form
         </h2>
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
-          Enter your academic credentials to confirm your consultation schedule.
+          Enter your student details to confirm your OJT consultation schedule.
         </p>
       </div>
 

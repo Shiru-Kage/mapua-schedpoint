@@ -680,12 +680,62 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
-.booking-form-sticky-col {
-  position: sticky;
-  top: 76px;
+/* Independent Column Scrolling System */
+.booking-schedule-scroll-col {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.booking-form-scroll-col {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.booking-schedule-scroll-col::-webkit-scrollbar,
+.booking-form-scroll-col::-webkit-scrollbar {
+  width: 6px;
+}
+
+.booking-schedule-scroll-col::-webkit-scrollbar-track,
+.booking-form-scroll-col::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.booking-schedule-scroll-col::-webkit-scrollbar-thumb,
+.booking-form-scroll-col::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+
+.booking-schedule-scroll-col::-webkit-scrollbar-thumb:hover,
+.booking-form-scroll-col::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+@media (min-width: 901px) {
+  .booking-layout-grid {
+    height: calc(100vh - 190px);
+    min-height: 560px;
+  }
+
+  .booking-schedule-scroll-col {
+    height: 100%;
+    padding-right: 8px;
+  }
+
+  .booking-form-scroll-col {
+    height: 100%;
+    padding-right: 8px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -719,7 +769,14 @@ body {
     gap: 16px;
   }
 
-  .booking-form-sticky-col {
+  .booking-schedule-scroll-col {
+    max-height: 520px;
+    padding-right: 4px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+  }
+
+  .booking-form-scroll-col {
     position: static;
   }
 }

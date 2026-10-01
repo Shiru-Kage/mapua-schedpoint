@@ -57,8 +57,8 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
   };
 
   // Generate mailto link so student can instantly email the Reference Code to themselves
-  const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[Mapúa SchedPoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
-    `Hello ${booking.fullName},\n\nHere are your Mapúa Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
+  const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[OJT Schedpoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
+    `Hello ${booking.fullName},\n\nHere are your OJT Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
   )}`;
 
   // MANDATORY: Verify Reference Code before retracting!
@@ -111,7 +111,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <CheckCircle2 size={24} color="#ffffff" />
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Mapúa University Consultation Pass
+              OJT Schedpoint Pass
             </span>
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>

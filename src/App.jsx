@@ -182,7 +182,7 @@ export default function App() {
                   color: 'var(--text-primary)',
                   margin: '0 0 4px 0'
                 }}>
-                  Academic Consultation & Presentation Scheduling
+                  OJT Scheduling Form
                 </h2>
                 <p style={{
                   fontSize: '0.875rem',
@@ -203,9 +203,9 @@ export default function App() {
               </button>
             </div>
 
-            {/* Split layout: Calendar View (Left) & Form (Right) */}
+            {/* Split layout: Calendar View (Left) & Form (Right) with Independent Scrolling */}
             <div className="booking-layout-grid">
-              <div>
+              <div className="booking-schedule-scroll-col">
                 <CalendarView
                   date={date}
                   setDate={setDate}
@@ -220,7 +220,7 @@ export default function App() {
                 />
               </div>
 
-              <div id="student-booking-form-section" className="booking-form-sticky-col">
+              <div id="student-booking-form-section" className="booking-form-scroll-col">
                 <BookingForm
                   selectedSlot={selectedSlot}
                   onSubmit={handleBookingSubmit}
@@ -290,7 +290,7 @@ export default function App() {
         color: 'var(--text-disabled)',
         background: 'var(--bg-surface)'
       }}>
-        Mapúa University Consultation System • Strict 1-Reservation Policy • Instant Slot Collision Prevention
+        OJT Schedpoint • Strict 1-Reservation Policy • Instant Slot Collision Prevention
       </footer>
     </div>
   );

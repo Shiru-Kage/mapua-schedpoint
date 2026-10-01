@@ -44,14 +44,11 @@ export default function Navbar({
                   color: 'var(--text-primary)',
                   margin: 0
                 }}>
-                  Mapúa SchedPoint
+                  OJT Schedpoint
                 </h1>
-                <span className="badge badge-gold" style={{ fontSize: '0.6875rem', padding: '2px 6px' }}>
-                  Mapúa
-                </span>
               </div>
               <p className="navbar-brand-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                10-Minute Consultation & Presentation Scheduler
+                OJT scheduling form
               </p>
             </div>
           </div>

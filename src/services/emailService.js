@@ -54,7 +54,7 @@ export async function sendRetractionEmail(booking) {
 
   // 2. Automated Email Dispatch to student's email address (ShipMyForm primary with FormSubmit fallback)
   const retractionPayload = {
-    _subject: `[Mapúa SchedPoint] Reservation Retraction Receipt: ${booking.timeDisplay} (${booking.date})`,
+    _subject: `[OJT Schedpoint] Reservation Retraction Receipt: ${booking.timeDisplay} (${booking.date})`,
     "Student Name": booking.fullName,
     "Student Number": booking.studentNumber,
     "Gender": booking.gender || 'Not specified',
@@ -136,7 +136,7 @@ export async function sendBookingConfirmationEmail(booking) {
   });
 
   const confirmationPayload = {
-    _subject: `[Mapúa SchedPoint] Reservation Confirmed — Reference Code: ${referenceCode}`,
+    _subject: `[OJT Schedpoint] Reservation Confirmed — Reference Code: ${referenceCode}`,
     "OFFICIAL REFERENCE CODE": referenceCode,
     "Student Name": booking.fullName,
     "Student Number": booking.studentNumber,
