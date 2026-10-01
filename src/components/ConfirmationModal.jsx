@@ -85,55 +85,66 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content ticket-card" style={{ maxWidth: '480px' }}>
+      <div 
+        className="modal-content ticket-card" 
+        style={{ 
+          maxWidth: '460px',
+          width: '100%',
+          maxHeight: 'min(94vh, 740px)',
+          display: 'flex',
+          flexDirection: 'column',
+          margin: 'auto'
+        }}
+      >
         {/* Academic Header Banner */}
         <div style={{
           background: 'var(--mapua-crimson)',
-          padding: '20px 24px',
+          padding: '14px 20px',
           color: '#ffffff',
-          position: 'relative'
+          position: 'relative',
+          flexShrink: 0
         }}>
           <button
             onClick={onClose}
             style={{
               position: 'absolute',
-              right: '16px',
-              top: '16px',
+              right: '14px',
+              top: '14px',
               background: 'transparent',
               border: 'none',
-              color: 'rgba(255,255,255,0.8)',
-              cursor: 'pointer'
+              color: 'rgba(255,255,255,0.85)',
+              cursor: 'pointer',
+              padding: '4px'
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            <CheckCircle2 size={24} color="#ffffff" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+            <CheckCircle2 size={18} color="#ffffff" />
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               OJT Schedpoint Pass
             </span>
           </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
             Schedule Confirmed
           </h3>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '24px' }}>
+        <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '11px' }}>
           {/* Reference Code Card */}
           <div style={{
             background: 'var(--bg-subtle)',
             border: '1.5px solid var(--mapua-crimson-border)',
             borderRadius: 'var(--radius-md)',
-            padding: '14px',
-            marginBottom: '16px',
+            padding: '10px 14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '4px'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Official Reference Code
               </span>
               <button
@@ -141,31 +152,31 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
                 onClick={handleCopyCode}
                 className="btn btn-secondary"
                 style={{
-                  padding: '4px 10px',
-                  fontSize: '0.75rem',
+                  padding: '3px 8px',
+                  fontSize: '0.72rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '4px',
                   background: copiedCode ? '#DCFCE7' : undefined,
                   color: copiedCode ? '#166534' : undefined,
                   borderColor: copiedCode ? '#86EFAC' : undefined
                 }}
               >
-                {copiedCode ? <Check size={13} color="#166534" /> : <Copy size={13} />}
-                <span>{copiedCode ? 'Copied to Clipboard!' : 'Copy Code'}</span>
+                {copiedCode ? <Check size={12} color="#166534" /> : <Copy size={12} />}
+                <span>{copiedCode ? 'Copied!' : 'Copy Code'}</span>
               </button>
             </div>
             <div style={{
               fontFamily: 'var(--font-mono)',
               fontWeight: 800,
-              fontSize: '1.25rem',
+              fontSize: '1.15rem',
               color: 'var(--mapua-crimson)',
               letterSpacing: '0.05em'
             }}>
               {booking.id}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-              ⚠️ <strong>Save this code!</strong> You will need this Reference Code if you ever need to retract or modify your defense schedule.
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              ⚠️ <strong>Save this code!</strong> You will need this Reference Code to retract or manage your slot.
             </div>
           </div>
 
@@ -174,18 +185,17 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
             background: 'var(--status-selected-subtle)',
             border: '1.5px solid var(--status-selected-border)',
             borderRadius: 'var(--radius-md)',
-            padding: '14px 16px',
-            marginBottom: '18px',
+            padding: '10px 14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px'
+            gap: '10px'
           }}>
-            <Clock size={22} color="var(--status-selected-bg)" style={{ flexShrink: 0 }} />
+            <Clock size={20} color="var(--status-selected-bg)" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--status-selected-accent)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--status-selected-accent)', fontFamily: 'var(--font-mono)' }}>
                 {booking.timeDisplay}
               </div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 {getFormattedDateLabel(booking.date)} (OJT Defense Presentation)
               </div>
             </div>
@@ -195,69 +205,68 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '20px',
-            fontSize: '0.8125rem'
+            gap: '8px 12px',
+            fontSize: '0.78rem'
           }}>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>STUDENT NAME</div>
-              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{booking.fullName}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>STUDENT NAME</div>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '1px' }}>{booking.fullName}</div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>STUDENT NUMBER</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>STUDENT NUMBER</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)', marginTop: '1px' }}>
                 {booking.studentNumber}
               </div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>GENDER</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>GENDER</div>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '1px' }}>
                 {booking.gender || 'Not specified'}
               </div>
             </div>
 
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>COURSE & SECTION</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{booking.course}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>COURSE & SECTION</div>
+              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '1px' }}>{booking.course}</div>
             </div>
 
             {booking.projectTitle && (
               <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>PROJECT TITLE</div>
-                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-word' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>PROJECT TITLE</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '1px', wordBreak: 'break-word' }}>
                   {booking.projectTitle}
                 </div>
               </div>
             )}
 
             <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>STUDENT EMAIL</div>
-              <div style={{ color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-all' }}>{booking.email}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>STUDENT EMAIL</div>
+              <div style={{ color: 'var(--text-primary)', marginTop: '1px', wordBreak: 'break-all' }}>{booking.email}</div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
               <button
                 type="button"
                 onClick={() => window.print()}
                 className="btn btn-secondary"
-                style={{ fontSize: '0.8125rem', padding: '9px' }}
+                style={{ fontSize: '0.78rem', padding: '7px 10px' }}
               >
-                <Printer size={15} />
+                <Printer size={14} />
                 <span>Print Pass</span>
               </button>
 
               <a
                 href={mailtoUrl}
                 className="btn btn-secondary"
-                style={{ fontSize: '0.8125rem', padding: '9px' }}
+                style={{ fontSize: '0.78rem', padding: '7px 10px' }}
               >
-                <Mail size={15} />
-                <span>Email Pass to Me</span>
+                <Mail size={14} />
+                <span>Email Pass</span>
               </a>
             </div>
 
@@ -266,9 +275,9 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               target="_blank"
               rel="noreferrer"
               className="btn btn-secondary"
-              style={{ fontSize: '0.8125rem', padding: '9px', width: '100%', justifyContent: 'center' }}
+              style={{ fontSize: '0.78rem', padding: '7px 10px', width: '100%', justifyContent: 'center' }}
             >
-              <ExternalLink size={15} />
+              <ExternalLink size={14} />
               <span>Add to Google Calendar</span>
             </a>
 

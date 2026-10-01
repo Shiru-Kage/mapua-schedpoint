@@ -13,6 +13,7 @@ import {
   fetchAllBookings, 
   submitBooking, 
   cancelBooking, 
+  batchCancelBookings,
   subscribeToBookings,
   updateBookingAttendance,
   batchUpdateBookingAttendance,
@@ -232,6 +233,34 @@ export default function App() {
     }
   };
 
+  const handleBatchCancelBooking = async (slotIds) => {
+    if (!Array.isArray(slotIds) || slotIds.length === 0) return;
+    setIsCancelling(true);
+    setErrorMessage('');
+    const idSet = new Set(slotIds);
+    const targetBookings = bookings.filter(b => idSet.has(b.slotId));
+    // Immediately update UI state so table and calendar update with 0 latency
+    setBookings(prev => prev.filter(b => !idSet.has(b.slotId)));
+
+    try {
+      await batchCancelBookings(slotIds);
+
+      // Dispatch automated cancellation emails in background
+      targetBookings.forEach(b => {
+        if (b && b.email) {
+          sendRetractionEmail(b).catch(emailErr => {
+            console.warn('Batch retraction email warning:', emailErr);
+          });
+        }
+      });
+    } catch (err) {
+      console.error('Failed batch cancel:', err);
+      alert('Failed batch removal: ' + err.message);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const handleUpdateAttendance = async (slotId, status) => {
     setBookings(prev => prev.map(b => b.slotId === slotId ? { ...b, attendanceStatus: status } : b));
     await updateBookingAttendance(slotId, status);
@@ -382,6 +411,7 @@ export default function App() {
             setDate={setDate}
             slotsData={slotsData}
             onCancelBooking={handleCancelBooking}
+            onBatchCancelBooking={handleBatchCancelBooking}
             isCancelling={isCancelling}
             allowedDates={allowedDates}
             onUpdateAllowedDates={async (newDates) => {

@@ -231,6 +231,48 @@ export async function cancelBooking(slotId) {
   return { success: true };
 }
 
+export async function batchCancelBookings(slotIds) {
+  if (!Array.isArray(slotIds) || slotIds.length === 0) return { success: true };
+  const idSet = new Set(slotIds);
+  const current = getLocalBookings();
+  const targetBookings = current.filter(b => idSet.has(b.slotId) || idSet.has(b.id));
+  const updated = current.filter(b => !idSet.has(b.slotId) && !idSet.has(b.id));
+  saveLocalBookings(updated);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  }
+
+  // 1. Firebase Firestore
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      const promises = [];
+      targetBookings.forEach(b => {
+        promises.push(deleteDoc(doc(db, 'bookings', b.slotId)));
+        if (b.id && b.id !== b.slotId) {
+          promises.push(deleteDoc(doc(db, 'bookings', b.id)));
+        }
+      });
+      await Promise.all(promises);
+    } catch (e) {
+      console.warn('Firestore batch delete warning:', e);
+    }
+  }
+
+  // 2. Backend Server API
+  try {
+    const promises = slotIds.map(id => 
+      fetch(`/api/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    );
+    await Promise.all(promises);
+  } catch {
+    // API not running or static environment
+  }
+
+  return { success: true, updatedBookings: updated };
+}
+
 export async function updateBookingAttendance(slotId, attendanceStatus) {
   const current = getLocalBookings();
   const updated = current.map(b => {

@@ -541,13 +541,14 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   z-index: 1000;
+  overflow-y: auto;
   animation: modalFadeIn 0.15s ease-out;
 }
 
@@ -558,9 +559,14 @@ body {
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 520px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text-primary);
+  margin: auto;
 }
 
 @keyframes modalFadeIn {

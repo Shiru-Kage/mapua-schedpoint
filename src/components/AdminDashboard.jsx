@@ -35,6 +35,7 @@ export default function AdminDashboard({
   setDate,
   slotsData,
   onCancelBooking,
+  onBatchCancelBooking,
   isCancelling,
   allowedDates = [],
   onUpdateAllowedDates,
@@ -49,6 +50,7 @@ export default function AdminDashboard({
   // Default to 'all' so instructor sees ALL reserved schedules across all dates by default
   const [filterDate, setFilterDate] = useState('all');
   const [studentToRemove, setStudentToRemove] = useState(null);
+  const [showBatchRemoveModal, setShowBatchRemoveModal] = useState(false);
 
   // Attendance Tab & Management State
   const [attendanceTab, setAttendanceTab] = useState('active'); // 'active' | 'finished' | 'missed' | 'all'
@@ -1322,6 +1324,22 @@ export default function AdminDashboard({
                 <RotateCcw size={14} />
                 <span>Move to Active ({selectedSlotIds.length})</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowBatchRemoveModal(true)}
+                className="btn btn-outline-danger"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                <Trash2 size={14} />
+                <span>Remove Selected ({selectedSlotIds.length})</span>
+              </button>
             </div>
           </div>
         )}
@@ -2008,6 +2026,122 @@ export default function AdminDashboard({
                   }}
                 >
                   {isCancelling ? 'Removing...' : 'Confirm Removal'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Removal Confirmation Modal */}
+      {showBatchRemoveModal && (
+        <div className="modal-overlay" style={{ zIndex: 1200 }}>
+          <div className="modal-content" style={{ maxWidth: '480px', maxHeight: 'min(90vh, 680px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Trash2 size={18} color="var(--mapua-crimson)" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  Batch Remove Reservations ({selectedSlotIds.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBatchRemoveModal(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
+                Are you sure you want to remove the <strong>{selectedSlotIds.length}</strong> selected student reservation{selectedSlotIds.length > 1 ? 's' : ''}? These defense slots will immediately reopen for other students.
+              </p>
+
+              <div style={{
+                maxHeight: '220px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                marginBottom: '16px'
+              }}>
+                {bookings.filter(b => selectedSlotIds.includes(b.slotId)).map((b) => (
+                  <div
+                    key={b.slotId}
+                    style={{
+                      background: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '8px 12px',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{b.fullName}</div>
+                      <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem' }}>
+                        ID: {b.studentNumber} • {b.course}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--mapua-crimson)', fontSize: '0.78rem' }}>
+                        {b.timeDisplay}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        {getFormattedDateLabel(b.date) || b.date}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowBatchRemoveModal(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '9px', fontSize: '0.85rem' }}
+                >
+                  Keep Reservations
+                </button>
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={async () => {
+                    const idsToCancel = [...selectedSlotIds];
+                    const count = idsToCancel.length;
+                    setShowBatchRemoveModal(false);
+                    if (onBatchCancelBooking) {
+                      await onBatchCancelBooking(idsToCancel);
+                    } else if (onCancelBooking) {
+                      for (const id of idsToCancel) {
+                        await onCancelBooking(id);
+                      }
+                    }
+                    setSelectedSlotIds([]);
+                    setAttendanceFeedback(`✓ Successfully removed ${count} student reservation${count > 1 ? 's' : ''}`);
+                    setTimeout(() => setAttendanceFeedback(''), 3500);
+                  }}
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1.2,
+                    padding: '9px',
+                    fontSize: '0.85rem',
+                    background: 'var(--mapua-crimson)',
+                    borderColor: 'var(--mapua-crimson)'
+                  }}
+                >
+                  {isCancelling ? 'Removing...' : `Confirm Remove (${selectedSlotIds.length})`}
                 </button>
               </div>
             </div>
