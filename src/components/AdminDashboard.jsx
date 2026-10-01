@@ -185,20 +185,17 @@ export default function AdminDashboard({
       result = result.filter(b => b.date === filterDate);
     }
 
-    // Session filter
+    // Session filter (dynamic based on morning AM vs afternoon PM)
     if (filterSession === 'morning') {
-      result = result.filter(b => 
-        b.slotId?.includes('_07') || 
-        b.slotId?.includes('_08') || 
-        b.slotId?.includes('_09') || 
-        b.slotId?.includes('_10')
-      );
+      result = result.filter(b => {
+        const hour = parseInt(b.slotId?.split('_')[1]?.slice(0, 2), 10);
+        return !isNaN(hour) ? hour < 12 : (b.timeDisplay?.includes('AM') || false);
+      });
     } else if (filterSession === 'afternoon') {
-      result = result.filter(b => 
-        b.slotId?.includes('_13') || 
-        b.slotId?.includes('_14') || 
-        b.slotId?.includes('_15')
-      );
+      result = result.filter(b => {
+        const hour = parseInt(b.slotId?.split('_')[1]?.slice(0, 2), 10);
+        return !isNaN(hour) ? hour >= 12 : (b.timeDisplay?.includes('PM') || false);
+      });
     }
 
     // Attendance tab filter
@@ -241,12 +238,14 @@ export default function AdminDashboard({
   const finishedBookingsCount = bookings.filter(b => b.attendanceStatus === 'finished').length;
   const missedBookingsCount = bookings.filter(b => b.attendanceStatus === 'missed').length;
 
-  const morningBookingsCount = bookings.filter(b => 
-    b.slotId?.includes('_07') || b.slotId?.includes('_08') || b.slotId?.includes('_09') || b.slotId?.includes('_10')
-  ).length;
-  const afternoonBookingsCount = bookings.filter(b => 
-    b.slotId?.includes('_13') || b.slotId?.includes('_14') || b.slotId?.includes('_15')
-  ).length;
+  const morningBookingsCount = bookings.filter(b => {
+    const hour = parseInt(b.slotId?.split('_')[1]?.slice(0, 2), 10);
+    return !isNaN(hour) ? hour < 12 : (b.timeDisplay?.includes('AM') || false);
+  }).length;
+  const afternoonBookingsCount = bookings.filter(b => {
+    const hour = parseInt(b.slotId?.split('_')[1]?.slice(0, 2), 10);
+    return !isNaN(hour) ? hour >= 12 : (b.timeDisplay?.includes('PM') || false);
+  }).length;
 
   // Single student attendance status change
   const handleMarkStatus = async (slotId, newStatus, studentName) => {
@@ -1019,8 +1018,8 @@ export default function AdminDashboard({
               }}
             >
               <option value="all">All Sessions</option>
-              <option value="morning">Morning Only (7–11 AM)</option>
-              <option value="afternoon">Afternoon Only (1–4 PM)</option>
+              <option value="morning">Morning Only ({slotsData?.morningLabel || '8–11 AM'})</option>
+              <option value="afternoon">Afternoon Only ({slotsData?.afternoonLabel || '1–4 PM'})</option>
             </select>
           </div>
 

@@ -303,14 +303,14 @@ export default function App() {
                   color: 'var(--text-primary)',
                   margin: '0 0 4px 0'
                 }}>
-                  OJT Scheduling Form
+                  OJT Defense Scheduling Form
                 </h2>
                 <p style={{
                   fontSize: '0.875rem',
                   color: 'var(--text-muted)',
                   margin: 0
                 }}>
-                  10-minute individual time slots across Morning (<strong>7:00 – 11:00 AM</strong>) and Afternoon (<strong>1:00 – 4:00 PM</strong>) sessions. Slots are locked upon confirmation.
+                  {slotsData?.slotMinutes || 10}-minute individual time slots across Morning (<strong>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</strong>) and Afternoon (<strong>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</strong>) sessions. Slots are locked upon confirmation.
                 </p>
               </div>
 
