@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { User, Hash, BookOpen, Mail, Clock, AlertCircle, ArrowRight, RotateCcw } from 'lucide-react';
+import { User, Hash, BookOpen, Mail, Clock, AlertCircle, ArrowRight, RotateCcw, FileText } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function BookingForm({
@@ -17,6 +17,7 @@ export default function BookingForm({
     studentNumber: '',
     gender: '',
     course: '',
+    projectTitle: '',
     email: '',
   });
   const [studentNumError, setStudentNumError] = useState('');
@@ -358,6 +359,30 @@ export default function BookingForm({
               onChange={handleChange}
               className="form-input"
             />
+          </div>
+        </div>
+
+        {/* Project Title */}
+        <div className="form-group">
+          <label className="form-label" htmlFor="projectTitle">
+            <FileText size={14} color="var(--mapua-crimson)" />
+            <span>Project Title</span>
+          </label>
+          <div className="input-container">
+            <FileText size={15} className="input-icon" />
+            <input
+              id="projectTitle"
+              name="projectTitle"
+              type="text"
+              required
+              placeholder="e.g. AI-Powered Healthcare Diagnostics System"
+              value={formData.projectTitle}
+              onChange={handleChange}
+              className="form-input"
+            />
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Enter your approved OJT project, capstone, or practicum topic.
           </div>
         </div>
 

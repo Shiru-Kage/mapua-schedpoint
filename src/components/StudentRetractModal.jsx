@@ -312,6 +312,22 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                           </div>
                         </div>
 
+                        {b.projectTitle && (
+                          <div style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            marginBottom: '8px',
+                            padding: '5px 8px',
+                            background: 'rgba(217, 38, 38, 0.05)',
+                            borderRadius: '4px',
+                            borderLeft: '3px solid var(--mapua-crimson)'
+                          }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Project Title</span>
+                            {b.projectTitle}
+                          </div>
+                        )}
+
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',

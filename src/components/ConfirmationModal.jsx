@@ -46,7 +46,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
       const title = encodeURIComponent(`Mapúa Consultation: ${booking.fullName}`);
       const details = encodeURIComponent(
-        `Mapúa University Consultation / Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nRef Code: ${booking.id}`
+        `Mapúa University Consultation / Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nProject: ${booking.projectTitle || 'N/A'}\nRef Code: ${booking.id}`
       );
       const dates = `${toIsoString(startDate)}/${toIsoString(endDate)}`;
 
@@ -58,7 +58,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
   // Generate mailto link so student can instantly email the Reference Code to themselves
   const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[OJT Schedpoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
-    `Hello ${booking.fullName},\n\nHere are your OJT Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
+    `Hello ${booking.fullName},\n\nHere are your OJT Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
   )}`;
 
   // MANDATORY: Verify Reference Code before retracting!
@@ -222,6 +222,15 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>COURSE & SECTION</div>
               <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{booking.course}</div>
             </div>
+
+            {booking.projectTitle && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>PROJECT TITLE</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-word' }}>
+                  {booking.projectTitle}
+                </div>
+              </div>
+            )}
 
             <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>STUDENT EMAIL</div>

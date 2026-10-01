@@ -167,6 +167,7 @@ export default function AdminDashboard({
         'Student Number',
         'Gender',
         'Course & Section',
+        'Project Title',
         'Student Email',
         'Booking Reference ID',
         'Booking Timestamp'
@@ -178,6 +179,7 @@ export default function AdminDashboard({
         `"${(b.studentNumber || '').replace(/"/g, '""')}"`,
         `"${(b.gender || 'Not specified').replace(/"/g, '""')}"`,
         `"${(b.course || '').replace(/"/g, '""')}"`,
+        `"${(b.projectTitle || '').replace(/"/g, '""')}"`,
         `"${(b.email || '').replace(/"/g, '""')}"`,
         `"${(b.id || '').replace(/"/g, '""')}"`,
         `"${(b.createdAt || '').replace(/"/g, '""')}"`
@@ -651,6 +653,7 @@ export default function AdminDashboard({
                     <th style={{ padding: '10px 12px' }}>Student Number</th>
                     <th style={{ padding: '10px 12px' }}>Gender</th>
                     <th style={{ padding: '10px 12px' }}>Course / Section</th>
+                    <th style={{ padding: '10px 12px' }}>Project Title</th>
                     <th style={{ padding: '10px 12px' }}>Student Email</th>
                     <th style={{ padding: '10px 12px' }}>Reference ID</th>
                     <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
@@ -697,6 +700,13 @@ export default function AdminDashboard({
                         <span className="badge badge-neutral">
                           {b.course}
                         </span>
+                      </td>
+
+                      {/* Project Title */}
+                      <td style={{ padding: '12px', color: 'var(--text-primary)', maxWidth: '220px' }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.projectTitle || ''}>
+                          {b.projectTitle || '—'}
+                        </div>
                       </td>
 
                       {/* Email */}
@@ -746,6 +756,22 @@ export default function AdminDashboard({
                       {b.course}
                     </span>
                   </div>
+
+                  {b.projectTitle && (
+                    <div style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      marginBottom: '8px',
+                      padding: '5px 8px',
+                      background: 'rgba(217, 38, 38, 0.05)',
+                      borderRadius: '4px',
+                      borderLeft: '3px solid var(--mapua-crimson)'
+                    }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Project Title</span>
+                      {b.projectTitle}
+                    </div>
+                  )}
 
                   <div style={{
                     display: 'flex',
