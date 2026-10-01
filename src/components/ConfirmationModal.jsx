@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, Clock, Printer, ExternalLink, RotateCcw, X, PlusCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Printer, ExternalLink, RotateCcw, X, PlusCircle, Copy, Check, Mail, ShieldAlert, KeyRound, AlertTriangle } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function ConfirmationModal({ booking, onClose, onRetractBooking }) {
   const [isRetracting, setIsRetracting] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  // Retraction verification state
+  const [showRetractVerify, setShowRetractVerify] = useState(false);
+  const [inputRetractCode, setInputRetractCode] = useState('');
+  const [retractError, setRetractError] = useState('');
 
   useEffect(() => {
     try {
@@ -20,6 +26,13 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
   if (!booking) return null;
 
+  const handleCopyCode = () => {
+    navigator.clipboard?.writeText(booking.id).then(() => {
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2500);
+    }).catch(() => {});
+  };
+
   const createGoogleCalendarUrl = () => {
     try {
       const [year, month, day] = booking.date.split('-').map(Number);
@@ -33,7 +46,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
       const title = encodeURIComponent(`Mapúa Consultation: ${booking.fullName}`);
       const details = encodeURIComponent(
-        `Mapúa University Consultation / Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nRef: ${booking.id}`
+        `Mapúa University Consultation / Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nRef Code: ${booking.id}`
       );
       const dates = `${toIsoString(startDate)}/${toIsoString(endDate)}`;
 
@@ -43,17 +56,30 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
     }
   };
 
-  const handleRetract = async () => {
-    if (window.confirm(`Are you sure you want to cancel and retract your reservation for ${booking.timeDisplay}? This slot will be reopened immediately for other students.`)) {
-      setIsRetracting(true);
-      try {
-        await onRetractBooking(booking.slotId);
-        onClose();
-      } catch (err) {
-        alert('Failed to retract: ' + err.message);
-      } finally {
-        setIsRetracting(false);
-      }
+  // Generate mailto link so student can instantly email the Reference Code to themselves
+  const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[Mapúa SchedPoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
+    `Hello ${booking.fullName},\n\nHere are your Mapúa Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
+  )}`;
+
+  // MANDATORY: Verify Reference Code before retracting!
+  const handleExecuteVerifiedRetract = async () => {
+    const entered = inputRetractCode.trim().toLowerCase();
+    const actual = String(booking.id || '').trim().toLowerCase();
+
+    if (entered !== actual) {
+      setRetractError('❌ Invalid Reference Code. Retraction denied. Please enter the exact Reference Code.');
+      return;
+    }
+
+    setIsRetracting(true);
+    setRetractError('');
+    try {
+      await onRetractBooking(booking.slotId, booking);
+      onClose();
+    } catch (err) {
+      setRetractError('Failed to retract: ' + err.message);
+    } finally {
+      setIsRetracting(false);
     }
   };
 
@@ -95,49 +121,52 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
         {/* Content */}
         <div style={{ padding: '24px' }}>
-          {/* Reference & Time Row */}
+          {/* Reference Code Card */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingBottom: '12px',
-            borderBottom: '1px solid var(--border-light)',
-            marginBottom: '16px'
-          }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              OFFICIAL REFERENCE CODE
-            </span>
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              color: 'var(--mapua-crimson)',
-              background: 'var(--mapua-crimson-subtle)',
-              padding: '3px 10px',
-              borderRadius: '4px',
-              border: '1px solid var(--mapua-crimson-border)'
-            }}>
-              {booking.id}
-            </span>
-          </div>
-
-          {/* Reference Email Notice */}
-          <div style={{
-            fontSize: '0.75rem',
-            color: 'var(--status-available-text)',
-            background: 'var(--status-available-bg)',
-            border: '1px solid var(--status-available-border)',
-            borderRadius: '6px',
-            padding: '8px 12px',
+            background: 'var(--bg-subtle)',
+            border: '1.5px solid var(--mapua-crimson-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '14px',
             marginBottom: '16px',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             gap: '8px'
           }}>
-            <CheckCircle2 size={16} color="var(--status-available-text)" style={{ flexShrink: 0 }} />
-            <span>
-              Reference Code sent to <strong>{booking.email}</strong>. Use this code if you ever need to retract your schedule.
-            </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Official Reference Code
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="btn btn-secondary"
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: copiedCode ? '#DCFCE7' : undefined,
+                  color: copiedCode ? '#166534' : undefined,
+                  borderColor: copiedCode ? '#86EFAC' : undefined
+                }}
+              >
+                {copiedCode ? <Check size={13} color="#166534" /> : <Copy size={13} />}
+                <span>{copiedCode ? 'Copied to Clipboard!' : 'Copy Code'}</span>
+              </button>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 800,
+              fontSize: '1.25rem',
+              color: 'var(--mapua-crimson)',
+              letterSpacing: '0.05em'
+            }}>
+              {booking.id}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              ⚠️ <strong>Save this code!</strong> You will need this Reference Code if you ever need to retract or modify your consultation schedule.
+            </div>
           </div>
 
           {/* Time Slot Highlight Box (High Contrast) */}
@@ -194,7 +223,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{booking.course}</div>
             </div>
 
-            <div>
+            <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>STUDENT EMAIL</div>
               <div style={{ color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-all' }}>{booking.email}</div>
             </div>
@@ -214,34 +243,126 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               </button>
 
               <a
-                href={createGoogleCalendarUrl()}
-                target="_blank"
-                rel="noreferrer"
+                href={mailtoUrl}
                 className="btn btn-secondary"
                 style={{ fontSize: '0.8125rem', padding: '9px' }}
               >
-                <ExternalLink size={15} />
-                <span>Add to Calendar</span>
+                <Mail size={15} />
+                <span>Email Pass to Me</span>
               </a>
             </div>
 
-            {/* Retract Reservation Option */}
-            <button
-              type="button"
-              disabled={isRetracting}
-              onClick={handleRetract}
-              className="btn btn-outline-danger"
-              style={{ width: '100%', fontSize: '0.8125rem', padding: '9px' }}
+            <a
+              href={createGoogleCalendarUrl()}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.8125rem', padding: '9px', width: '100%', justifyContent: 'center' }}
             >
-              <RotateCcw size={14} />
-              <span>Cancel & Retract This Reservation</span>
-            </button>
+              <ExternalLink size={15} />
+              <span>Add to Google Calendar</span>
+            </a>
+
+            {/* Retract Reservation Verification Section */}
+            {!showRetractVerify ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRetractVerify(true);
+                  setInputRetractCode('');
+                  setRetractError('');
+                }}
+                className="btn btn-outline-danger"
+                style={{ width: '100%', fontSize: '0.8125rem', padding: '9px', marginTop: '4px' }}
+              >
+                <RotateCcw size={14} />
+                <span>Cancel & Retract This Reservation</span>
+              </button>
+            ) : (
+              <div style={{
+                background: 'var(--bg-subtle)',
+                border: '1.5px solid var(--mapua-crimson)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px',
+                marginTop: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--mapua-crimson)', fontWeight: 700, fontSize: '0.875rem' }}>
+                  <ShieldAlert size={18} />
+                  <span>Reference Code Required to Retract</span>
+                </div>
+                <p style={{ fontSize: '0.785rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                  To confirm cancellation and prevent accidental slot loss, please enter your <strong>Reference Code</strong> below:
+                </p>
+                <div className="input-container" style={{ margin: 0 }}>
+                  <KeyRound size={15} className="input-icon" color="var(--mapua-crimson)" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Enter Reference Code (e.g. BKG-...)"
+                    value={inputRetractCode}
+                    onChange={(e) => {
+                      setInputRetractCode(e.target.value);
+                      setRetractError('');
+                    }}
+                    className="form-input"
+                    style={{
+                      paddingLeft: '36px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.875rem',
+                      borderColor: retractError ? 'var(--status-booked-border)' : 'var(--mapua-crimson)'
+                    }}
+                  />
+                </div>
+                {retractError && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--mapua-crimson)',
+                    background: 'var(--mapua-crimson-subtle)',
+                    padding: '6px 10px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 600
+                  }}>
+                    <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                    <span>{retractError}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRetractVerify(false);
+                      setInputRetractCode('');
+                      setRetractError('');
+                    }}
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: '8px', fontSize: '0.8125rem' }}
+                  >
+                    Keep Slot
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isRetracting || !inputRetractCode.trim()}
+                    onClick={handleExecuteVerifiedRetract}
+                    className="btn btn-danger"
+                    style={{ flex: 1.4, padding: '8px', fontSize: '0.8125rem' }}
+                  >
+                    {isRetracting ? 'Releasing Slot...' : 'Verify Code & Retract'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={onClose}
               className="btn btn-primary"
-              style={{ width: '100%', marginTop: '4px', padding: '10px' }}
+              style={{ width: '100%', marginTop: '6px', padding: '10px' }}
             >
               <PlusCircle size={16} />
               <span>Done / Return to Schedule</span>

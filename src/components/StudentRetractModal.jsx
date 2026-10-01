@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RotateCcw, Search, X, AlertTriangle, CheckCircle2, Clock, Calendar, User, Hash, Mail } from 'lucide-react';
+import { RotateCcw, Search, X, AlertTriangle, CheckCircle2, Clock, Calendar, User, Hash, Mail, ShieldAlert, KeyRound } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function StudentRetractModal({ isOpen, onClose, bookings, onRetract }) {
@@ -8,6 +8,11 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
   const [isRetracting, setIsRetracting] = useState(false);
   const [retractedReceipt, setRetractedReceipt] = useState(null);
 
+  // Mandatory Reference Code Verification State
+  const [retractingBooking, setRetractingBooking] = useState(null);
+  const [verifyCodeInput, setVerifyCodeInput] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+
   if (!isOpen) return null;
 
   const cleanQuery = refQueryInput.trim().toLowerCase();
@@ -15,7 +20,8 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
     ? bookings.filter(b => 
         String(b.id || '').trim().toLowerCase() === cleanQuery ||
         String(b.referenceCode || '').trim().toLowerCase() === cleanQuery ||
-        String(b.studentNumber || '').trim().toLowerCase() === cleanQuery
+        String(b.studentNumber || '').trim().toLowerCase() === cleanQuery ||
+        String(b.email || '').trim().toLowerCase() === cleanQuery
       )
     : [];
 
@@ -23,29 +29,48 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
     e.preventDefault();
     setSearched(true);
     setRetractedReceipt(null);
+    setRetractingBooking(null);
   };
 
-  const handleConfirmRetract = async (booking) => {
-    if (!window.confirm(`Are you sure you want to retract your reservation for ${booking.timeDisplay}? This will release the slot and dispatch an automated cancellation email to ${booking.email}.`)) {
+  const handleInitiateRetract = (booking) => {
+    setRetractingBooking(booking);
+    setVerifyError('');
+    // Strictly require manual code input, never prefill
+    setVerifyCodeInput('');
+  };
+
+  const handleExecuteVerifiedRetraction = async () => {
+    if (!retractingBooking) return;
+
+    const enteredCodeClean = verifyCodeInput.trim().toUpperCase();
+    const actualCodeClean = String(retractingBooking.id || '').trim().toUpperCase();
+
+    // STRICT REFERENCE CODE ENFORCEMENT:
+    if (enteredCodeClean !== actualCodeClean) {
+      setVerifyError('❌ Invalid Reference Code. Retraction denied. You must enter the exact Reference Code (e.g. BKG-...) for this booking.');
       return;
     }
 
     setIsRetracting(true);
+    setVerifyError('');
+
     try {
-      await onRetract(booking.slotId, booking);
+      await onRetract(retractingBooking.slotId, retractingBooking);
       setRetractedReceipt({
-        fullName: booking.fullName,
-        studentNumber: booking.studentNumber,
-        timeDisplay: booking.timeDisplay,
-        date: booking.date,
-        email: booking.email,
-        id: booking.id,
+        fullName: retractingBooking.fullName,
+        studentNumber: retractingBooking.studentNumber,
+        timeDisplay: retractingBooking.timeDisplay,
+        date: retractingBooking.date,
+        email: retractingBooking.email,
+        id: retractingBooking.id,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
+      setRetractingBooking(null);
+      setVerifyCodeInput('');
       setSearched(false);
       setRefQueryInput('');
     } catch (err) {
-      alert('Failed to retract reservation: ' + err.message);
+      setVerifyError('Failed to retract reservation: ' + err.message);
     } finally {
       setIsRetracting(false);
     }
@@ -69,7 +94,11 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setRetractingBooking(null);
+              setVerifyError('');
+              onClose();
+            }}
             style={{
               background: 'transparent',
               border: 'none',
@@ -136,11 +165,12 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
               <input
                 type="text"
                 autoFocus
-                placeholder="Enter Reference Code (e.g. BKG-...) or Student #"
+                placeholder="Enter Reference Code, Student #, or Email"
                 value={refQueryInput}
                 onChange={(e) => {
                   setRefQueryInput(e.target.value);
                   setSearched(false);
+                  setRetractingBooking(null);
                 }}
                 className="form-input"
                 style={{ paddingLeft: '38px', fontFamily: 'var(--font-mono)', letterSpacing: '0.02em' }}
@@ -152,89 +182,170 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
               className="btn btn-primary"
               style={{ width: '100%', padding: '10px' }}
             >
-              Locate Reservation via Reference Code
+              Locate Reservation
             </button>
           </form>
 
-          {/* Search Results */}
-          {searched && (
-            <div>
-              {matchedBookings.length === 0 ? (
+          {/* Verification Box (Required Reference Code step before slot release) */}
+          {retractingBooking ? (
+            <div style={{
+              background: 'var(--bg-subtle)',
+              border: '1.5px solid var(--mapua-crimson)',
+              borderRadius: 'var(--radius-md)',
+              padding: '16px',
+              animation: 'modalSlideUp 0.15s ease-out'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--mapua-crimson)', fontWeight: 700, fontSize: '0.925rem', marginBottom: '6px' }}>
+                <ShieldAlert size={18} />
+                <span>Reference Code Required</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.45 }}>
+                To authorize cancellation for <strong>{retractingBooking.fullName}</strong> ({retractingBooking.timeDisplay}), please enter the <strong>Reference Code</strong> sent to your email (<strong>{retractingBooking.email}</strong>):
+              </p>
+
+              <div className="input-container" style={{ marginBottom: '8px' }}>
+                <KeyRound size={16} className="input-icon" color="var(--mapua-crimson)" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Paste Reference Code (e.g. BKG-MUN...)"
+                  value={verifyCodeInput}
+                  onChange={(e) => {
+                    setVerifyCodeInput(e.target.value);
+                    setVerifyError('');
+                  }}
+                  className="form-input"
+                  style={{
+                    paddingLeft: '38px',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.03em',
+                    borderColor: verifyError ? 'var(--status-booked-border)' : 'var(--mapua-crimson)'
+                  }}
+                />
+              </div>
+
+              {verifyError && (
                 <div style={{
-                  padding: '16px',
-                  background: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  textAlign: 'center',
-                  fontSize: '0.8125rem',
-                  color: 'var(--text-muted)'
+                  fontSize: '0.75rem',
+                  color: 'var(--mapua-crimson)',
+                  fontWeight: 600,
+                  marginBottom: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--mapua-crimson-subtle)',
+                  padding: '6px 10px',
+                  borderRadius: '4px'
                 }}>
-                  No active reservations found matching code: <strong>{refQueryInput}</strong>. Please check the confirmation email sent to you upon booking.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {matchedBookings.map((b) => (
-                    <div
-                      key={b.slotId}
-                      style={{
-                        border: '1px solid var(--border-medium)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: '14px',
-                        background: 'var(--bg-surface)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                        <div>
-                          <div style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {b.fullName}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                            ID: {b.studentNumber} • {b.gender ? `${b.gender} • ` : ''}{b.course}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                          <span className="badge badge-booked">
-                            Reserved
-                          </span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-disabled)' }}>
-                            {b.id}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '8px 10px',
-                        background: 'var(--bg-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.8125rem',
-                        marginBottom: '12px'
-                      }}>
-                        <Clock size={15} color="var(--mapua-crimson)" />
-                        <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                          {b.timeDisplay}
-                        </span>
-                        <span style={{ color: 'var(--text-muted)' }}>
-                          {getFormattedDateLabel(b.date)}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={isRetracting}
-                        onClick={() => handleConfirmRetract(b)}
-                        className="btn btn-outline-danger"
-                        style={{ width: '100%', fontSize: '0.8125rem', padding: '8px' }}
-                      >
-                        <RotateCcw size={14} />
-                        <span>{isRetracting ? 'Retracting & Dispatching Email...' : 'Cancel & Retract This Reservation'}</span>
-                      </button>
-                    </div>
-                  ))}
+                  <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                  <span>{verifyError}</span>
                 </div>
               )}
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRetractingBooking(null);
+                    setVerifyCodeInput('');
+                    setVerifyError('');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '8px', fontSize: '0.8125rem' }}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={isRetracting || !verifyCodeInput.trim()}
+                  onClick={handleExecuteVerifiedRetraction}
+                  className="btn btn-danger"
+                  style={{ flex: 1.5, padding: '8px', fontSize: '0.8125rem' }}
+                >
+                  {isRetracting ? 'Verifying & Releasing...' : 'Verify Code & Retract Slot'}
+                </button>
+              </div>
             </div>
+          ) : (
+            /* Search Results */
+            searched && (
+              <div>
+                {matchedBookings.length === 0 ? (
+                  <div style={{
+                    padding: '16px',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    textAlign: 'center',
+                    fontSize: '0.8125rem',
+                    color: 'var(--text-muted)'
+                  }}>
+                    No active reservations found matching: <strong>{refQueryInput}</strong>. Please check the confirmation email sent to you upon booking.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {matchedBookings.map((b) => (
+                      <div
+                        key={b.slotId}
+                        style={{
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '14px',
+                          background: 'var(--bg-surface)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {b.fullName}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                              ID: {b.studentNumber} • {b.gender ? `${b.gender} • ` : ''}{b.course}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                            <span className="badge badge-booked">
+                              Reserved
+                            </span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-disabled)' }}>
+                              {b.id}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '8px 10px',
+                          background: 'var(--bg-subtle)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.8125rem',
+                          marginBottom: '12px'
+                        }}>
+                          <Clock size={15} color="var(--mapua-crimson)" />
+                          <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                            {b.timeDisplay}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {getFormattedDateLabel(b.date)}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleInitiateRetract(b)}
+                          className="btn btn-outline-danger"
+                          style={{ width: '100%', fontSize: '0.8125rem', padding: '9px' }}
+                        >
+                          <RotateCcw size={14} />
+                          <span>Cancel & Retract This Reservation</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </div>
