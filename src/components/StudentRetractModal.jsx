@@ -113,7 +113,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
 
         <div style={{ padding: '20px' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
-            Need to change your time or can no longer attend? Enter the <strong>Reference Code</strong> sent to your email (or your Student Number) to locate and release your slot.
+            Need to change your time or can no longer attend? Enter the <strong>Reference Code</strong> from your Confirmation Pass (or your Student Number) to locate and release your slot.
           </p>
 
           {/* Retraction & Email Confirmation Card */}
@@ -144,7 +144,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: 600 }}>
                   <Mail size={15} color="#15803D" />
-                  <span>Cancellation receipt dispatched to:</span>
+                  <span>Cancellation details:</span>
                 </div>
                 <div style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#0F172A', paddingLeft: '21px' }}>
                   {retractedReceipt.email}
@@ -154,6 +154,38 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                   <div><strong>Released Schedule:</strong> {retractedReceipt.timeDisplay} • {getFormattedDateLabel(retractedReceipt.date)}</div>
                   <div><strong>Reference ID:</strong> {retractedReceipt.id}</div>
                 </div>
+
+                {/* Option 1: 1-Click Email Cancellation Receipt */}
+                {(() => {
+                  const subject = `[OJT Schedpoint] Cancellation Receipt - Ref ${retractedReceipt.id}`;
+                  const body = `Hello ${retractedReceipt.fullName},\n\nThis confirms your OJT Defense schedule has been officially retracted:\n\n• Reference Code: ${retractedReceipt.id}\n• Student Number: ${retractedReceipt.studentNumber}\n• Released Schedule: ${retractedReceipt.timeDisplay} (${retractedReceipt.date})\n• Retracted At: ${retractedReceipt.timestamp}\n\nYour slot has been released back into the available pool.\nMapúa University - Department of OJT & Career Services`;
+                  const isGoogle = Boolean(retractedReceipt.email?.toLowerCase().includes('gmail.com') || retractedReceipt.email?.toLowerCase().includes('mapua.edu.ph'));
+                  const url = isGoogle
+                    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(retractedReceipt.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                    : `mailto:${encodeURIComponent(retractedReceipt.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                  return (
+                    <a
+                      href={url}
+                      target={isGoogle ? "_blank" : undefined}
+                      rel="noreferrer"
+                      className="btn btn-secondary"
+                      style={{
+                        marginTop: '8px',
+                        fontSize: '0.78rem',
+                        padding: '7px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <Mail size={14} />
+                      <span>{isGoogle ? 'Save Cancellation Receipt in Gmail (1-Click)' : 'Email Receipt to Myself'}</span>
+                    </a>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -200,7 +232,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                 <span>Reference Code Required</span>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.45 }}>
-                To authorize cancellation for <strong>{retractingBooking.fullName}</strong> ({retractingBooking.timeDisplay}), please enter the <strong>Reference Code</strong> sent to your email (<strong>{retractingBooking.email}</strong>):
+                To authorize cancellation for <strong>{retractingBooking.fullName}</strong> ({retractingBooking.timeDisplay}), please enter your official <strong>Reference Code</strong>:
               </p>
 
               <div className="input-container" style={{ marginBottom: '8px' }}>

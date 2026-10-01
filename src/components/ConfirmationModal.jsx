@@ -56,9 +56,12 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
     }
   };
 
-  // Generate mailto link and direct Gmail web compose link so student can instantly email the Reference Code to themselves
-  const emailSubject = `[OJT Schedpoint] Reference Code: ${booking.id}`;
-  const emailBody = `Hello ${booking.fullName},\n\nHere are your OJT Defense details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://ojt-scheduler.netlify.app/`;
+  // Option 1: 1-Click direct Gmail / mailto URL with pre-filled Reference Code and reservation details
+  const emailSubject = `[OJT Schedpoint] Reference Code: ${booking.id} - ${booking.fullName}`;
+  const emailBody = `Hello ${booking.fullName},\n\nHere are your official Mapúa OJT Defense reservation details:\n\n• Official Reference Code: ${booking.id}\n• Scheduled Time: ${booking.timeDisplay}\n• Date: ${booking.date}\n• Student Number: ${booking.studentNumber}\n• Course & Section: ${booking.course}\n• Project Title: ${booking.projectTitle || 'N/A'}\n\nPlease keep this Reference Code safe. You will need it to retract or reschedule your slot at:\nhttps://ojt-scheduler.netlify.app/\n\nMapúa University - Department of OJT & Career Services`;
+
+  const mailtoUrl = `mailto:${encodeURIComponent(booking.email || '')}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(booking.email || '')}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
   const isGoogleUser = Boolean(booking?.email?.toLowerCase().includes('gmail.com') || booking?.email?.toLowerCase().includes('mapua.edu.ph'));
   const preferredEmailUrl = isGoogleUser ? gmailUrl : mailtoUrl;
@@ -250,7 +253,29 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '2px' }}>
+            {/* Option 1: Prominent 1-Click Direct Email Action */}
+            <a
+              href={preferredEmailUrl}
+              target={isGoogleUser ? "_blank" : undefined}
+              rel="noreferrer"
+              className="btn btn-primary"
+              style={{
+                fontSize: '0.825rem',
+                fontWeight: 700,
+                padding: '9px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                textDecoration: 'none'
+              }}
+              title="Open pre-filled draft in Gmail addressed to your inbox"
+            >
+              <Mail size={16} />
+              <span>{isGoogleUser ? 'Send Pass to My Gmail (1-Click)' : 'Email Pass to Myself (1-Click)'}</span>
+            </a>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
               <button
                 type="button"
@@ -259,32 +284,20 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
                 style={{ fontSize: '0.78rem', padding: '7px 10px' }}
               >
                 <Printer size={14} />
-                <span>Print Pass</span>
+                <span>Print / PDF Pass</span>
               </button>
 
               <a
-                href={preferredEmailUrl}
-                target={isGoogleUser ? "_blank" : undefined}
+                href={createGoogleCalendarUrl()}
+                target="_blank"
                 rel="noreferrer"
                 className="btn btn-secondary"
-                style={{ fontSize: '0.78rem', padding: '7px 10px' }}
-                title="Email pass directly to your inbox"
+                style={{ fontSize: '0.78rem', padding: '7px 10px', justifyContent: 'center' }}
               >
-                <Mail size={14} />
-                <span>{isGoogleUser ? 'Open in Gmail' : 'Email Pass'}</span>
+                <ExternalLink size={14} />
+                <span>Add to Calendar</span>
               </a>
             </div>
-
-            <a
-              href={createGoogleCalendarUrl()}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-secondary"
-              style={{ fontSize: '0.78rem', padding: '7px 10px', width: '100%', justifyContent: 'center' }}
-            >
-              <ExternalLink size={14} />
-              <span>Add to Google Calendar</span>
-            </a>
 
             {/* Retract Reservation Verification Section */}
             {!showRetractVerify ? (

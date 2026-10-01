@@ -158,7 +158,7 @@ export default function BookingForm({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ color: '#16a34a', fontWeight: 800 }}>✓</span>
-            <span>Confirmation pass with reference code sent to your email</span>
+            <span>Instant on-screen confirmation pass with 1-click email copy</span>
           </div>
         </div>
 
