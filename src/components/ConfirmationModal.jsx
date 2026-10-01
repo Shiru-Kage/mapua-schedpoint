@@ -171,8 +171,8 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
           {/* Time Slot Highlight Box (High Contrast) */}
           <div style={{
-            background: 'var(--mapua-crimson-subtle)',
-            border: '1.5px solid var(--mapua-crimson-border)',
+            background: 'var(--status-selected-subtle)',
+            border: '1.5px solid var(--status-selected-border)',
             borderRadius: 'var(--radius-md)',
             padding: '14px 16px',
             marginBottom: '18px',
@@ -180,9 +180,9 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
             alignItems: 'center',
             gap: '12px'
           }}>
-            <Clock size={22} color="var(--mapua-crimson)" style={{ flexShrink: 0 }} />
+            <Clock size={22} color="var(--status-selected-bg)" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--mapua-crimson)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--status-selected-accent)', fontFamily: 'var(--font-mono)' }}>
                 {booking.timeDisplay}
               </div>
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600 }}>

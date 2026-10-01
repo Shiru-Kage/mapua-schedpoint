@@ -109,35 +109,52 @@ export default function BookingForm({
       {/* Selected Slot Notice */}
       {selectedSlot ? (
         <div style={{
-          background: 'var(--mapua-crimson-subtle)',
-          border: '1.5px solid var(--mapua-crimson-border)',
+          background: 'var(--status-selected-subtle)',
+          border: '1.5px solid var(--status-selected-border)',
           borderRadius: 'var(--radius-md)',
           padding: '14px 16px',
           marginBottom: '20px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px'
+          gap: '14px',
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)'
         }}>
           <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '6px',
-            background: 'var(--mapua-crimson)',
+            width: '40px',
+            height: '40px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #059669 0%, #0D9488 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexShrink: 0
+            flexShrink: 0,
+            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.3)'
           }}>
             <Clock size={20} color="#ffffff" />
           </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--mapua-crimson)', fontWeight: 700 }}>
-              Selected Time Slot ({selectedSlot.sessionTitle})
+          <div style={{ flex: 1 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              color: 'var(--status-selected-accent)',
+              fontWeight: 700
+            }}>
+              <span>Selected Time Slot ({selectedSlot.sessionTitle})</span>
             </div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+            <div style={{
+              fontSize: '1.2rem',
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-mono)',
+              marginTop: '1px'
+            }}>
               {selectedSlot.timeDisplay}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '0.775rem', color: 'var(--status-selected-accent)', fontWeight: 600, marginTop: '1px' }}>
               {getFormattedDateLabel(selectedSlot.date)}
             </div>
           </div>

@@ -39,7 +39,11 @@
   --status-booked-border: #fecdd3;
 
   --status-selected-text: #ffffff;
-  --status-selected-bg: #991b1b;
+  --status-selected-bg: #059669;
+  --status-selected-subtle: #ecfdf5;
+  --status-selected-border: #10b981;
+  --status-selected-accent: #047857;
+  --status-selected-ring: rgba(16, 185, 129, 0.25);
 
   /* Typography Colors */
   --text-primary: #0f172a;    /* 16.5:1 on white */
@@ -94,7 +98,11 @@
   --status-booked-border: rgba(220, 38, 38, 0.3);
 
   --status-selected-text: #ffffff;
-  --status-selected-bg: #dc2626;
+  --status-selected-bg: #10b981;
+  --status-selected-subtle: rgba(16, 185, 129, 0.15);
+  --status-selected-border: #34d399;
+  --status-selected-accent: #6ee7b7;
+  --status-selected-ring: rgba(16, 185, 129, 0.35);
 
   --text-primary: #f8fafc;
   --text-secondary: #e2e8f0;
@@ -231,6 +239,12 @@ body {
   border: 1px solid var(--status-booked-border);
 }
 
+.badge-selected {
+  background: var(--status-selected-bg);
+  color: var(--status-selected-text);
+  border: 1px solid var(--status-selected-border);
+}
+
 .badge-gold {
   background: var(--mapua-gold-bg);
   color: var(--mapua-gold);
@@ -336,8 +350,9 @@ body {
 }
 
 .timeline-slot-row.selected {
-  border: 2px solid var(--mapua-crimson);
-  background: var(--mapua-crimson-subtle);
+  border: 2px solid var(--status-selected-border);
+  background: var(--status-selected-subtle);
+  box-shadow: 0 0 0 3px var(--status-selected-ring);
 }
 
 .timeline-slot-row.booked {
@@ -444,8 +459,9 @@ body {
 }
 
 .slot-card.selected {
-  background: var(--mapua-crimson-subtle);
-  border: 2px solid var(--mapua-crimson);
+  background: var(--status-selected-subtle);
+  border: 2px solid var(--status-selected-border);
+  box-shadow: 0 0 0 3px var(--status-selected-ring);
 }
 
 .slot-card.booked {

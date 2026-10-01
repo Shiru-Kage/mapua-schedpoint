@@ -389,7 +389,7 @@ export default function CalendarView({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
-                      background: 'var(--mapua-crimson)',
+                      background: 'var(--status-selected-bg)',
                       color: '#ffffff',
                       borderRadius: '4px',
                       padding: '4px 10px',
@@ -399,7 +399,7 @@ export default function CalendarView({
                       boxSizing: 'border-box'
                     }}>
                       <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
-                      <span>Selected Schedule (10 Minutes)</span>
+                      <span>Selected Schedule (10 Minutes) ✓</span>
                     </div>
                   ) : (
                     <div style={{
@@ -429,7 +429,7 @@ export default function CalendarView({
                       Slot Taken
                     </span>
                   ) : isSelected ? (
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--status-selected-bg)' }}>
                       Active ✓
                     </span>
                   ) : (
@@ -477,7 +477,7 @@ export default function CalendarView({
                       <Lock size={11} /> Taken
                     </span>
                   ) : isSelected ? (
-                    <span className="badge" style={{ background: 'var(--mapua-crimson)', color: '#ffffff', fontSize: '0.6875rem' }}>
+                    <span className="badge badge-selected" style={{ fontSize: '0.6875rem' }}>
                       <CheckCircle2 size={11} /> Selected
                     </span>
                   ) : (
