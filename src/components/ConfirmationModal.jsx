@@ -56,10 +56,12 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
     }
   };
 
-  // Generate mailto link so student can instantly email the Reference Code to themselves
-  const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[OJT Schedpoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
-    `Hello ${booking.fullName},\n\nHere are your OJT Defense details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
-  )}`;
+  // Generate mailto link and direct Gmail web compose link so student can instantly email the Reference Code to themselves
+  const emailSubject = `[OJT Schedpoint] Reference Code: ${booking.id}`;
+  const emailBody = `Hello ${booking.fullName},\n\nHere are your OJT Defense details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://ojt-scheduler.netlify.app/`;
+
+  const isGoogleUser = Boolean(booking?.email?.toLowerCase().includes('gmail.com') || booking?.email?.toLowerCase().includes('mapua.edu.ph'));
+  const preferredEmailUrl = isGoogleUser ? gmailUrl : mailtoUrl;
 
   // MANDATORY: Verify Reference Code before retracting!
   const handleExecuteVerifiedRetract = async () => {
@@ -261,12 +263,15 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               </button>
 
               <a
-                href={mailtoUrl}
+                href={preferredEmailUrl}
+                target={isGoogleUser ? "_blank" : undefined}
+                rel="noreferrer"
                 className="btn btn-secondary"
                 style={{ fontSize: '0.78rem', padding: '7px 10px' }}
+                title="Email pass directly to your inbox"
               >
                 <Mail size={14} />
-                <span>Email Pass</span>
+                <span>{isGoogleUser ? 'Open in Gmail' : 'Email Pass'}</span>
               </a>
             </div>
 
