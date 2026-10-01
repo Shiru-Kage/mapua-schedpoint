@@ -213,7 +213,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                   border: '1px solid var(--mapua-crimson-border)'
                 }}>
                   <Sparkles size={14} />
-                  <span>Welcome to OJT Consultation Portal</span>
+                  <span>Welcome to OJT Defense Portal</span>
                 </div>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.03em' }}>
                   Please Select Your Portal
@@ -274,7 +274,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                       I am a Student
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                      Schedule your 10-minute OJT consultation, reserve defense slots, or manage / retract your existing appointment.
+                      Schedule your OJT defense presentation slot, reserve times, or manage / retract your existing appointment.
                     </p>
                   </div>
 
@@ -341,7 +341,7 @@ export default function RoleLoginPage({ onLoginStudent, onLoginInstructor }) {
                       I am an Instructor
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                      Manage available consultation dates, view full student appointment roster, cancel slots, and export records.
+                      Manage available defense dates, adjust session hours and timeslot intervals, view student roster, and export records.
                     </p>
                   </div>
 

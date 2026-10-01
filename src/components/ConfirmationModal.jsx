@@ -44,9 +44,9 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
       const toIsoString = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
 
-      const title = encodeURIComponent(`Mapúa Consultation: ${booking.fullName}`);
+      const title = encodeURIComponent(`Mapúa OJT Defense: ${booking.fullName}`);
       const details = encodeURIComponent(
-        `Mapúa University Consultation / Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nProject: ${booking.projectTitle || 'N/A'}\nRef Code: ${booking.id}`
+        `Mapúa University OJT Defense Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nProject: ${booking.projectTitle || 'N/A'}\nRef Code: ${booking.id}`
       );
       const dates = `${toIsoString(startDate)}/${toIsoString(endDate)}`;
 
@@ -58,7 +58,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
   // Generate mailto link so student can instantly email the Reference Code to themselves
   const mailtoUrl = `mailto:${encodeURIComponent(booking.email)}?subject=${encodeURIComponent(`[OJT Schedpoint] Reference Code: ${booking.id}`)}&body=${encodeURIComponent(
-    `Hello ${booking.fullName},\n\nHere are your OJT Consultation details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
+    `Hello ${booking.fullName},\n\nHere are your OJT Defense details:\n\nOfficial Reference Code: ${booking.id}\nScheduled Time: ${booking.timeDisplay}\nDate: ${booking.date}\nCourse: ${booking.course}\nProject Title: ${booking.projectTitle || 'N/A'}\nStudent Number: ${booking.studentNumber}\n\nKeep this Reference Code safe. You will need it to retract or manage your slot at: https://shiru-kage.github.io/mapua-schedpoint/`
   )}`;
 
   // MANDATORY: Verify Reference Code before retracting!
@@ -165,7 +165,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               {booking.id}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-              ⚠️ <strong>Save this code!</strong> You will need this Reference Code if you ever need to retract or modify your consultation schedule.
+              ⚠️ <strong>Save this code!</strong> You will need this Reference Code if you ever need to retract or modify your defense schedule.
             </div>
           </div>
 
@@ -186,7 +186,7 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
                 {booking.timeDisplay}
               </div>
               <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {getFormattedDateLabel(booking.date)} (10-Minute Consultation)
+                {getFormattedDateLabel(booking.date)} (OJT Defense Presentation)
               </div>
             </div>
           </div>

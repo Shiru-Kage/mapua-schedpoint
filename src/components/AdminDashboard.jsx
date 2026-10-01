@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, 
   Clock, 
@@ -13,9 +13,12 @@ import {
   Mail,
   Trash2,
   Plus,
+  Minus,
   RotateCcw,
   CheckCircle2,
-  CalendarPlus
+  CalendarPlus,
+  Sliders,
+  Save
 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
@@ -27,7 +30,9 @@ export default function AdminDashboard({
   onCancelBooking,
   isCancelling,
   allowedDates = [],
-  onUpdateAllowedDates
+  onUpdateAllowedDates,
+  timeslotConfig,
+  onUpdateTimeslotConfig
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSession, setFilterSession] = useState('all');
@@ -38,6 +43,71 @@ export default function AdminDashboard({
   // Date Management State
   const [newDateInput, setNewDateInput] = useState('');
   const [dateFeedback, setDateFeedback] = useState('');
+
+  // Timeslot configuration state
+  const [morningStart, setMorningStart] = useState(timeslotConfig?.morningStart || '08:00');
+  const [morningEnd, setMorningEnd] = useState(timeslotConfig?.morningEnd || '11:00');
+  const [afternoonStart, setAfternoonStart] = useState(timeslotConfig?.afternoonStart || '13:00');
+  const [afternoonEnd, setAfternoonEnd] = useState(timeslotConfig?.afternoonEnd || '16:00');
+  const [slotDuration, setSlotDuration] = useState(timeslotConfig?.slotDurationMinutes || 10);
+  const [timeslotFeedback, setTimeslotFeedback] = useState('');
+  const [isSavingTimeslot, setIsSavingTimeslot] = useState(false);
+
+  useEffect(() => {
+    if (timeslotConfig) {
+      setMorningStart(timeslotConfig.morningStart || '08:00');
+      setMorningEnd(timeslotConfig.morningEnd || '11:00');
+      setAfternoonStart(timeslotConfig.afternoonStart || '13:00');
+      setAfternoonEnd(timeslotConfig.afternoonEnd || '16:00');
+      setSlotDuration(timeslotConfig.slotDurationMinutes || 10);
+    }
+  }, [timeslotConfig]);
+
+  const handleSaveTimeslotConfig = async (e) => {
+    if (e) e.preventDefault();
+    setIsSavingTimeslot(true);
+    try {
+      const newConfig = {
+        morningStart,
+        morningEnd,
+        afternoonStart,
+        afternoonEnd,
+        slotDurationMinutes: Math.max(1, Math.min(120, Number(slotDuration) || 10))
+      };
+      if (onUpdateTimeslotConfig) {
+        await onUpdateTimeslotConfig(newConfig);
+      }
+      setTimeslotFeedback('✓ Timeslot settings saved! Student defense schedule updated in real-time.');
+      setTimeout(() => setTimeslotFeedback(''), 4000);
+    } catch (err) {
+      console.error(err);
+      setTimeslotFeedback('Error saving timeslot settings.');
+    } finally {
+      setIsSavingTimeslot(false);
+    }
+  };
+
+  const handleResetTimeslotDefaults = async () => {
+    setIsSavingTimeslot(true);
+    const defaults = {
+      morningStart: '08:00',
+      morningEnd: '11:00',
+      afternoonStart: '13:00',
+      afternoonEnd: '16:00',
+      slotDurationMinutes: 10
+    };
+    setMorningStart('08:00');
+    setMorningEnd('11:00');
+    setAfternoonStart('13:00');
+    setAfternoonEnd('16:00');
+    setSlotDuration(10);
+    if (onUpdateTimeslotConfig) {
+      await onUpdateTimeslotConfig(defaults);
+    }
+    setIsSavingTimeslot(false);
+    setTimeslotFeedback('✓ Reset timeslots to defaults (8:00–11:00 AM & 1:00–4:00 PM, 10-min interval)');
+    setTimeout(() => setTimeslotFeedback(''), 4000);
+  };
 
   const handleAddAllowedDate = async (e) => {
     e.preventDefault();
@@ -148,7 +218,7 @@ export default function AdminDashboard({
 
   const [exportSuccess, setExportSuccess] = useState(false);
 
-  const downloadFilename = `Mapua_Consultations_${filterDate === 'all' ? 'All_Dates' : filterDate}.csv`;
+  const downloadFilename = `Mapua_OJT_Defenses_${filterDate === 'all' ? 'All_Dates' : filterDate}.csv`;
   const serverDownloadUrl = `/api/export-csv?date=${encodeURIComponent(filterDate)}`;
 
   const handleExportCSV = (e) => {
@@ -247,7 +317,7 @@ export default function AdminDashboard({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Morning Sessions (7–11 AM)
+                Morning Sessions ({slotsData?.morningLabel || '8–11 AM'})
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
                 {morningBookingsCount}
@@ -267,7 +337,7 @@ export default function AdminDashboard({
             </div>
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            Booked morning consultation appointments
+            Booked morning defense appointments
           </div>
         </div>
 
@@ -275,7 +345,7 @@ export default function AdminDashboard({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Afternoon Sessions (1–4 PM)
+                Afternoon Sessions ({slotsData?.afternoonLabel || '1–4 PM'})
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
                 {afternoonBookingsCount}
@@ -481,6 +551,296 @@ export default function AdminDashboard({
         </form>
       </div>
 
+      {/* Timeslot & Schedule Hours / Interval Configuration Card */}
+      <div className="academic-card" style={{ padding: '20px' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          paddingBottom: '14px',
+          borderBottom: '1px solid var(--border-light)',
+          marginBottom: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sliders size={18} color="var(--mapua-crimson)" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                Timeslot & Schedule Hours Configuration
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+              Adjust start and end times for Morning and Afternoon sessions, and set the slot presentation interval (default: 10 minutes).
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleResetTimeslotDefaults}
+            disabled={isSavingTimeslot}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.75rem', padding: '6px 10px', gap: '6px' }}
+            title="Reset to default times: Morning 8-11 AM, Afternoon 1-4 PM, 10 min interval"
+          >
+            <RotateCcw size={13} />
+            <span>Reset to Defaults (8–11 AM, 1–4 PM, 10m)</span>
+          </button>
+        </div>
+
+        {/* Timeslot Feedback Notice */}
+        {timeslotFeedback && (
+          <div style={{
+            fontSize: '0.8rem',
+            color: '#166534',
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <CheckCircle2 size={16} color="#166534" />
+            <span>{timeslotFeedback}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveTimeslotConfig}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '16px',
+            marginBottom: '16px'
+          }}>
+            {/* Morning Session Hours */}
+            <div style={{
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '10px' }}>
+                <Clock size={15} color="var(--mapua-crimson)" />
+                <span>Morning Session Hours</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={morningStart}
+                    onChange={(e) => setMorningStart(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      fontSize: '0.875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={morningEnd}
+                    onChange={(e) => setMorningEnd(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      fontSize: '0.875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Afternoon Session Hours */}
+            <div style={{
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '10px' }}>
+                <Clock size={15} color="var(--mapua-crimson)" />
+                <span>Afternoon Session Hours</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={afternoonStart}
+                    onChange={(e) => setAfternoonStart(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      fontSize: '0.875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={afternoonEnd}
+                    onChange={(e) => setAfternoonEnd(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      fontSize: '0.875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Interval / Slot Duration */}
+            <div style={{
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                  <Clock size={15} color="var(--mapua-crimson)" />
+                  <span>Defense Slot Interval</span>
+                </div>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--mapua-crimson)', fontFamily: 'var(--font-mono)' }}>
+                  {slotDuration} mins / slot
+                </span>
+              </div>
+
+              {/* Quick Stepper + Presets */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSlotDuration(prev => Math.max(5, Number(prev) - 5))}
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 10px' }}
+                  title="Lower interval by 5 mins"
+                >
+                  <Minus size={14} />
+                </button>
+                <input
+                  type="number"
+                  min="5"
+                  max="120"
+                  step="1"
+                  value={slotDuration}
+                  onChange={(e) => setSlotDuration(Math.max(1, Math.min(120, Number(e.target.value) || 10)))}
+                  style={{
+                    width: '70px',
+                    textAlign: 'center',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSlotDuration(prev => Math.min(120, Number(prev) + 5))}
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 10px' }}
+                  title="Increase interval by 5 mins"
+                >
+                  <Plus size={14} />
+                </button>
+
+                {/* Preset Chips */}
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginLeft: 'auto' }}>
+                  {[5, 10, 15, 20, 30].map(mins => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => setSlotDuration(mins)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: slotDuration === mins ? 700 : 500,
+                        background: slotDuration === mins ? 'var(--mapua-crimson)' : 'var(--bg-surface)',
+                        color: slotDuration === mins ? '#ffffff' : 'var(--text-secondary)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {mins}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Set the duration allocated for each student's presentation (Default: 10 mins).
+              </div>
+            </div>
+          </div>
+
+          {/* Action Row */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            paddingTop: '12px',
+            borderTop: '1px dashed var(--border-light)'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Current generated slots per day: <strong>{slotsData?.totalSlots || 0} slots</strong> ({slotsData?.morning?.length || 0} Morning + {slotsData?.afternoon?.length || 0} Afternoon)
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSavingTimeslot}
+              className="btn btn-primary"
+              style={{ padding: '8px 16px', fontSize: '0.8125rem', gap: '6px' }}
+            >
+              <Save size={14} />
+              <span>{isSavingTimeslot ? 'Saving Changes...' : 'Save Timeslot Configuration'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* Controls Bar: Search, Date Filter, Session Filter, Export */}
       <div className="academic-card" style={{ padding: '16px' }}>
         <div style={{
@@ -601,7 +961,7 @@ export default function AdminDashboard({
         }}>
           <div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              {filterDate === 'all' ? 'All Scheduled Consultation Bookings' : `Consultation Roster for ${getFormattedDateLabel(filterDate)}`}
+              {filterDate === 'all' ? 'All Scheduled OJT Defense Bookings' : `OJT Defense Roster for ${getFormattedDateLabel(filterDate)}`}
             </h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
               Showing {filteredBookings.length} of {totalAllBookings} total registered student appointments

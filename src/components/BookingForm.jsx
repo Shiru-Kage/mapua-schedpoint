@@ -103,7 +103,7 @@ export default function BookingForm({
           OJT Scheduling Form
         </h2>
         <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0 }}>
-          Enter your student details to confirm your OJT consultation schedule.
+          Enter your student details to confirm your OJT defense schedule.
         </p>
       </div>
 

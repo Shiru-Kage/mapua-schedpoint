@@ -67,7 +67,7 @@ export async function sendRetractionEmail(booking) {
     "Booking Reference Code": booking.id || 'N/A',
     "Cancellation Timestamp": `${timestampFormatted} (PHT)`,
     "Status": "CONFIRMED CANCELLED & SLOT REOPENED",
-    "Official Note": "Your consultation / defense reservation has been officially retracted. The slot has been released back into the available pool for your peers. If you wish to reschedule for another time or day, please visit: https://shiru-kage.github.io/mapua-schedpoint/"
+    "Official Note": "Your OJT defense reservation has been officially retracted. The slot has been released back into the available pool for your peers. If you wish to reschedule for another time or day, please visit: https://shiru-kage.github.io/mapua-schedpoint/"
   };
 
   try {
@@ -146,7 +146,7 @@ export async function sendBookingConfirmationEmail(booking) {
     "Course & Section": booking.course,
     "Project Title": booking.projectTitle || 'N/A',
     "Reserved Slot Time": booking.timeDisplay,
-    "Scheduled Consultation Date": booking.date,
+    "Scheduled Defense Date": booking.date,
     "Confirmation Timestamp": `${timestampFormatted} (PHT)`,
     "Status": "CONFIRMED & LOCKED IN",
     "RETRACTION INSTRUCTION": `Keep this email safe! If you need to retract or cancel this reservation to choose another time, enter your Reference Code (${referenceCode}) at: https://shiru-kage.github.io/mapua-schedpoint/`

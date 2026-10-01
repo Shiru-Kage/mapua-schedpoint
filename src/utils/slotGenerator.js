@@ -1,37 +1,68 @@
-// Utility to generate accurate 10-minute slots for Morning (7-11 AM) and Afternoon (1-4 PM)
+// Utility to generate accurate customizable slots for Morning (default 8-11 AM) and Afternoon (default 1-4 PM)
 
-export const MORNING_CONFIG = {
-  startHour: 7,
-  startMinute: 0,
-  endHour: 11,
-  endMinute: 0,
-  session: 'morning',
-  title: 'Morning Session',
-  timeRange: '7:00 AM – 11:00 AM',
-  slotMinutes: 10,
+export const DEFAULT_TIMESLOT_CONFIG = {
+  morningStart: '08:00',
+  morningEnd: '11:00',
+  afternoonStart: '13:00',
+  afternoonEnd: '16:00',
+  slotDurationMinutes: 10,
 };
 
-export const AFTERNOON_CONFIG = {
-  startHour: 13, // 1:00 PM
-  startMinute: 0,
-  endHour: 16, // 4:00 PM
-  endMinute: 0,
-  session: 'afternoon',
-  title: 'Afternoon Session',
-  timeRange: '1:00 PM – 4:00 PM',
-  slotMinutes: 10,
-};
+export function parseTimeString(timeStr, defaultHour = 8, defaultMinute = 0) {
+  if (!timeStr || typeof timeStr !== 'string') return { hour: defaultHour, minute: defaultMinute };
+  const parts = timeStr.split(':').map(Number);
+  const hour = isNaN(parts[0]) ? defaultHour : Math.max(0, Math.min(23, parts[0]));
+  const minute = isNaN(parts[1]) ? defaultMinute : Math.max(0, Math.min(59, parts[1]));
+  return { hour, minute };
+}
 
-function formatTime(hour, minute) {
+export function formatTime(hour, minute) {
   const period = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
   const displayMinute = minute < 10 ? `0${minute}` : minute;
   return `${displayHour}:${displayMinute} ${period}`;
 }
 
+export function formatTimeShort(hour, minute) {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return minute === 0 ? `${displayHour} ${period}` : `${displayHour}:${minute < 10 ? '0' : ''}${minute} ${period}`;
+}
+
 function pad(num) {
   return num < 10 ? `0${num}` : `${num}`;
 }
+
+export function buildSessionConfig(sessionType, startStr, endStr, slotMinutes = 10) {
+  const isMorning = sessionType === 'morning';
+  const defStart = isMorning ? { hour: 8, minute: 0 } : { hour: 13, minute: 0 };
+  const defEnd = isMorning ? { hour: 11, minute: 0 } : { hour: 16, minute: 0 };
+
+  const parsedStart = parseTimeString(startStr, defStart.hour, defStart.minute);
+  const parsedEnd = parseTimeString(endStr, defEnd.hour, defEnd.minute);
+
+  const startFormatted = formatTime(parsedStart.hour, parsedStart.minute);
+  const endFormatted = formatTime(parsedEnd.hour, parsedEnd.minute);
+
+  const startShort = formatTimeShort(parsedStart.hour, parsedStart.minute);
+  const endShort = formatTimeShort(parsedEnd.hour, parsedEnd.minute);
+
+  return {
+    startHour: parsedStart.hour,
+    startMinute: parsedStart.minute,
+    endHour: parsedEnd.hour,
+    endMinute: parsedEnd.minute,
+    session: sessionType,
+    title: isMorning ? 'Morning Session' : 'Afternoon Session',
+    timeRange: `${startFormatted} – ${endFormatted}`,
+    shortLabel: `${startShort} – ${endShort}`,
+    slotMinutes: Math.max(1, Math.min(120, Number(slotMinutes) || 10)),
+  };
+}
+
+// Pre-computed default sessions (8-11 AM and 1-4 PM, 10 min)
+export const MORNING_CONFIG = buildSessionConfig('morning', '08:00', '11:00', 10);
+export const AFTERNOON_CONFIG = buildSessionConfig('afternoon', '13:00', '16:00', 10);
 
 export function generateSlotsForSession(config, dateString) {
   const slots = [];
@@ -43,6 +74,11 @@ export function generateSlotsForSession(config, dateString) {
     const slotStartMin = currentMinutes % 60;
     
     const nextMinutes = currentMinutes + config.slotMinutes;
+    // Don't create slots that extend past session end
+    if (nextMinutes > endMinutes && slots.length > 0) {
+      break;
+    }
+
     const slotEndHour = Math.floor(nextMinutes / 60);
     const slotEndMin = nextMinutes % 60;
 
@@ -50,7 +86,7 @@ export function generateSlotsForSession(config, dateString) {
     const endTimeFormatted = formatTime(slotEndHour, slotEndMin);
     const timeDisplay = `${startTimeFormatted} – ${endTimeFormatted}`;
     
-    // e.g. "2026-10-01_0700"
+    // e.g. "2026-10-01_0800"
     const slotKey = `${dateString}_${pad(slotStartHour)}${pad(slotStartMin)}`;
 
     slots.push({
@@ -73,14 +109,34 @@ export function generateSlotsForSession(config, dateString) {
   return slots;
 }
 
-export function getAllSlotsForDate(dateString) {
-  const morning = generateSlotsForSession(MORNING_CONFIG, dateString);
-  const afternoon = generateSlotsForSession(AFTERNOON_CONFIG, dateString);
+export function getAllSlotsForDate(dateString, customConfig = null) {
+  const config = customConfig || DEFAULT_TIMESLOT_CONFIG;
+  const morningConfig = buildSessionConfig(
+    'morning',
+    config.morningStart || '08:00',
+    config.morningEnd || '11:00',
+    config.slotDurationMinutes || 10
+  );
+  const afternoonConfig = buildSessionConfig(
+    'afternoon',
+    config.afternoonStart || '13:00',
+    config.afternoonEnd || '16:00',
+    config.slotDurationMinutes || 10
+  );
+
+  const morning = generateSlotsForSession(morningConfig, dateString);
+  const afternoon = generateSlotsForSession(afternoonConfig, dateString);
+
   return {
     morning,
     afternoon,
     all: [...morning, ...afternoon],
-    totalSlots: morning.length + afternoon.length, // 24 + 18 = 42
+    totalSlots: morning.length + afternoon.length,
+    slotMinutes: morningConfig.slotMinutes,
+    morningRange: morningConfig.timeRange,
+    afternoonRange: afternoonConfig.timeRange,
+    morningLabel: morningConfig.shortLabel,
+    afternoonLabel: afternoonConfig.shortLabel,
   };
 }
 

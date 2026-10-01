@@ -19,7 +19,12 @@ import {
   getLocalAllowedDates, 
   fetchAllowedDates, 
   updateAllowedDates, 
-  subscribeToAllowedDates 
+  subscribeToAllowedDates,
+  getLocalTimeslotConfig,
+  fetchTimeslotConfig,
+  updateTimeslotConfig,
+  subscribeToTimeslotConfig,
+  DEFAULT_TIMESLOT_CONFIG
 } from './services/scheduleSettings';
 import { getSavedSession, saveSession, clearSession } from './services/instructorAuth';
 import { getFirebaseDb } from './services/firebase';
@@ -47,12 +52,13 @@ export default function App() {
   });
 
   const [allowedDates, setAllowedDates] = useState(() => getLocalAllowedDates());
+  const [timeslotConfig, setTimeslotConfig] = useState(() => getLocalTimeslotConfig());
   const [date, setDate] = useState(() => {
     const initial = getLocalAllowedDates();
     const today = getTodayString();
     return initial.includes(today) ? today : (initial[0] || '2026-10-05');
   });
-  const [sessionFilter, setSessionFilter] = useState('morning');
+  const [sessionFilter, setSessionFilter] = useState('all'); // By default show all slots
   const [viewMode, setViewMode] = useState('timeline');
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -75,10 +81,10 @@ export default function App() {
     localStorage.setItem('mapua_theme', theme);
   }, [theme]);
 
-  // Compute 42 slots (24 morning + 18 afternoon)
+  // Compute slots based on dynamic timeslot configuration (default 8-11 AM & 1-4 PM, 10 min)
   const slotsData = useMemo(() => {
-    return getAllSlotsForDate(date);
-  }, [date]);
+    return getAllSlotsForDate(date, timeslotConfig);
+  }, [date, timeslotConfig]);
 
   // Initial load & real-time sync listener
   useEffect(() => {
@@ -124,6 +130,25 @@ export default function App() {
 
     return () => {
       if (unsubAllowed) unsubAllowed();
+    };
+  }, []);
+
+  // Subscribe to timeslot interval and hours configuration
+  useEffect(() => {
+    fetchTimeslotConfig().then((cfg) => {
+      if (cfg && cfg.slotDurationMinutes) {
+        setTimeslotConfig(cfg);
+      }
+    });
+
+    const unsubTimeslot = subscribeToTimeslotConfig((cfg) => {
+      if (cfg && cfg.slotDurationMinutes) {
+        setTimeslotConfig(cfg);
+      }
+    });
+
+    return () => {
+      if (unsubTimeslot) unsubTimeslot();
     };
   }, []);
 
@@ -324,8 +349,16 @@ export default function App() {
             allowedDates={allowedDates}
             onUpdateAllowedDates={async (newDates) => {
               const res = await updateAllowedDates(newDates);
-              if (res.success && res.dates) {
-                setAllowedDates(res.dates);
+              if (res && Array.isArray(res)) {
+                setAllowedDates(res);
+              }
+              return res;
+            }}
+            timeslotConfig={timeslotConfig}
+            onUpdateTimeslotConfig={async (newConfig) => {
+              const res = await updateTimeslotConfig(newConfig);
+              if (res) {
+                setTimeslotConfig(res);
               }
               return res;
             }}

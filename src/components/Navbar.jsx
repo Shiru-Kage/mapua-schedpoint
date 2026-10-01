@@ -165,7 +165,7 @@ export default function Navbar({
                 type="button"
                 onClick={() => setCurrentTab('booking')}
                 className={`segmented-control-item ${currentTab === 'booking' ? 'active' : ''}`}
-                title="View / Schedule Consultation Slots"
+                title="View / Schedule Defense Slots"
               >
                 <Users size={14} />
                 <span>Student Schedule</span>

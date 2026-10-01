@@ -106,3 +106,123 @@ export function subscribeToAllowedDates(callback) {
     window.removeEventListener('ojt_allowed_dates_updated', handleCustomEvent);
   };
 }
+
+// -------------------------------------------------------------
+// Timeslot Interval & Hours Configuration (Default: 8-11 AM, 1-4 PM, 10 min)
+// -------------------------------------------------------------
+export const DEFAULT_TIMESLOT_CONFIG = {
+  morningStart: '08:00',
+  morningEnd: '11:00',
+  afternoonStart: '13:00',
+  afternoonEnd: '16:00',
+  slotDurationMinutes: 10,
+};
+
+const TIMESLOT_STORAGE_KEY = 'ojt_timeslot_config';
+
+export function getLocalTimeslotConfig() {
+  try {
+    const raw = localStorage.getItem(TIMESLOT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          ...DEFAULT_TIMESLOT_CONFIG,
+          ...parsed,
+          slotDurationMinutes: Math.max(1, Math.min(120, Number(parsed.slotDurationMinutes) || 10)),
+        };
+      }
+    }
+  } catch (e) {
+    console.error('Error reading timeslot config from localStorage:', e);
+  }
+  return { ...DEFAULT_TIMESLOT_CONFIG };
+}
+
+export function saveLocalTimeslotConfig(config) {
+  try {
+    const validated = {
+      morningStart: config.morningStart || DEFAULT_TIMESLOT_CONFIG.morningStart,
+      morningEnd: config.morningEnd || DEFAULT_TIMESLOT_CONFIG.morningEnd,
+      afternoonStart: config.afternoonStart || DEFAULT_TIMESLOT_CONFIG.afternoonStart,
+      afternoonEnd: config.afternoonEnd || DEFAULT_TIMESLOT_CONFIG.afternoonEnd,
+      slotDurationMinutes: Math.max(1, Math.min(120, Number(config.slotDurationMinutes) || 10)),
+    };
+    localStorage.setItem(TIMESLOT_STORAGE_KEY, JSON.stringify(validated));
+    return validated;
+  } catch (e) {
+    console.error('Error saving timeslot config:', e);
+    return config;
+  }
+}
+
+export async function fetchTimeslotConfig() {
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      const configRef = doc(db, 'settings', 'timeslot_config');
+      const snap = await getDoc(configRef);
+      if (snap.exists() && snap.data()?.slotDurationMinutes) {
+        const remote = snap.data();
+        const saved = saveLocalTimeslotConfig(remote);
+        return saved;
+      }
+    } catch (err) {
+      console.warn('Could not fetch remote timeslot config from Firestore:', err);
+    }
+  }
+  return getLocalTimeslotConfig();
+}
+
+export async function updateTimeslotConfig(config) {
+  const saved = saveLocalTimeslotConfig(config);
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      const configRef = doc(db, 'settings', 'timeslot_config');
+      await setDoc(configRef, {
+        ...saved,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.warn('Failed to update timeslot config in Firestore:', err);
+    }
+  }
+  // Dispatch local window event so all open tabs update in real-time
+  window.dispatchEvent(new CustomEvent('ojt_timeslot_config_updated', { detail: saved }));
+  return saved;
+}
+
+export function subscribeToTimeslotConfig(callback) {
+  const db = getFirebaseDb();
+  let unsubFirestore = null;
+
+  if (db) {
+    try {
+      const configRef = doc(db, 'settings', 'timeslot_config');
+      unsubFirestore = onSnapshot(configRef, (snap) => {
+        if (snap.exists() && snap.data()?.slotDurationMinutes) {
+          const config = saveLocalTimeslotConfig(snap.data());
+          callback(config);
+        }
+      }, (err) => {
+        console.warn('Firestore timeslot config listener error:', err);
+      });
+    } catch (e) {
+      console.warn('Error subscribing to timeslot config:', e);
+    }
+  }
+
+  const handleCustomEvent = (e) => {
+    if (e.detail && typeof e.detail === 'object') {
+      callback(e.detail);
+    }
+  };
+  window.addEventListener('ojt_timeslot_config_updated', handleCustomEvent);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('ojt_timeslot_config_updated', handleCustomEvent);
+  };
+}
+

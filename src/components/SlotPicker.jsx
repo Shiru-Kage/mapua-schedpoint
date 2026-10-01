@@ -52,11 +52,11 @@ export default function SlotPicker({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <CalendarDays size={18} color="var(--accent-primary)" />
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
-              Select Consultation Schedule
+              Select OJT Defense Schedule
             </h2>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-            {getFormattedDateLabel(date)} • 10-Minute Individual Time Slots
+            {getFormattedDateLabel(date)} • {slotsData?.slotMinutes || 10}-Minute Defense Presentation Slots
           </p>
         </div>
 
@@ -128,11 +128,11 @@ export default function SlotPicker({
             </div>
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Morning</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>7:00 AM – 11:00 AM</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</div>
             </div>
           </div>
           <span className={`badge ${morningAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
-            {morningAvailable} / 24 Open
+            {morningAvailable} / {slotsData?.morning?.length || 18} Open
           </span>
         </button>
 
@@ -171,11 +171,11 @@ export default function SlotPicker({
             </div>
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Afternoon</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>1:00 PM – 4:00 PM</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</div>
             </div>
           </div>
           <span className={`badge ${afternoonAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
-            {afternoonAvailable} / 18 Open
+            {afternoonAvailable} / {slotsData?.afternoon?.length || 18} Open
           </span>
         </button>
 
@@ -214,11 +214,11 @@ export default function SlotPicker({
             </div>
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>All Sessions</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Full Day (42 Slots)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Full Day ({slotsData?.totalSlots || 0} Slots)</div>
             </div>
           </div>
           <span className="badge badge-selected">
-            {morningAvailable + afternoonAvailable} / 42 Open
+            {morningAvailable + afternoonAvailable} / {slotsData?.totalSlots || 0} Open
           </span>
         </button>
       </div>

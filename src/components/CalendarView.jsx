@@ -66,7 +66,8 @@ export default function CalendarView({
         const monthName = target.toLocaleDateString('en-US', { month: 'short' });
 
         const dayBookedCount = bookings.filter(b => b.date === dateStr).length;
-        const dayOpenCount = Math.max(0, 42 - dayBookedCount);
+        const totalPossibleSlots = slotsData?.totalSlots || 42;
+        const dayOpenCount = Math.max(0, totalPossibleSlots - dayBookedCount);
 
         return {
           dateStr,
@@ -84,12 +85,12 @@ export default function CalendarView({
           dayNum: dateStr,
           monthName: '',
           dayBookedCount: 0,
-          dayOpenCount: 42,
+          dayOpenCount: slotsData?.totalSlots || 42,
           isSelected: dateStr === date,
         };
       }
     });
-  }, [allowedDates, date, bookings]);
+  }, [allowedDates, date, bookings, slotsData?.totalSlots]);
 
   // Step active date to previous or next allowed date
   const shiftDateByStep = (direction) => {
@@ -141,11 +142,11 @@ export default function CalendarView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CalendarIcon size={18} color="var(--mapua-crimson)" />
             <h2 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              OJT Consultation Schedule
+              OJT Defense Scheduler
             </h2>
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-            {getFormattedDateLabel(date)} • 10-Minute OJT Windows
+            {getFormattedDateLabel(date)} • {slotsData?.slotMinutes || 10}-Minute Defense Windows
           </p>
         </div>
 
@@ -315,20 +316,20 @@ export default function CalendarView({
             type="button"
             onClick={() => setSessionFilter('morning')}
             className={`segmented-control-item ${sessionFilter === 'morning' ? 'active' : ''}`}
-            title="Morning (7:00 – 11:00 AM)"
+            title={`Morning (${slotsData?.morningRange || '8:00 – 11:00 AM'})`}
           >
             <Sun size={14} />
-            <span>Morning (7–11 AM)</span>
+            <span>Morning ({slotsData?.morningLabel || '8–11 AM'})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSessionFilter('afternoon')}
             className={`segmented-control-item ${sessionFilter === 'afternoon' ? 'active' : ''}`}
-            title="Afternoon (1:00 – 4:00 PM)"
+            title={`Afternoon (${slotsData?.afternoonRange || '1:00 – 4:00 PM'})`}
           >
             <Sunset size={14} />
-            <span>Afternoon (1–4 PM)</span>
+            <span>Afternoon ({slotsData?.afternoonLabel || '1–4 PM'})</span>
           </button>
 
           <button
@@ -382,7 +383,7 @@ export default function CalendarView({
               {getFormattedDateLabel(date)} is Not Open for Scheduling
             </h3>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.5 }}>
-              The instructor has designated specific dates for OJT consultations and presentations. Please select one of the authorized dates below:
+              The instructor has designated specific dates for OJT defenses and presentations. Please select one of the authorized dates below:
             </p>
           </div>
 
@@ -498,7 +499,7 @@ export default function CalendarView({
                       boxSizing: 'border-box'
                     }}>
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', flexShrink: 0 }}></span>
-                      <span>Available for Consultation</span>
+                      <span>Available for Defense</span>
                     </div>
                   )}
                 </div>
