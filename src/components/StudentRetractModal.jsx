@@ -113,7 +113,7 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
 
         <div style={{ padding: '20px' }}>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5 }}>
-            Need to change your time or can no longer attend? Enter the <strong>Reference Code</strong> from your Confirmation Pass (or your Student Number) to locate and release your slot.
+            Need to change your time or can no longer attend? Enter your <strong>Student Number</strong> or <strong>Email</strong> to locate your reservation. To confirm cancellation, you will be prompted to enter your private <strong>Reference Code</strong> sent to your email or saved on your pass.
           </p>
 
           {/* Retraction & Email Confirmation Card */}
@@ -255,6 +255,9 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                   }}
                 />
               </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.4 }}>
+                💡 <em>Check the email from ShipMyForm / SchedPoint sent to {retractingBooking.email}, or paste the code you copied upon booking.</em>
+              </div>
 
               {verifyError && (
                 <div style={{
@@ -338,8 +341,8 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                             <span className="badge badge-booked">
                               Reserved
                             </span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-disabled)' }}>
-                              {b.id}
+                            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              🔒 Ref Protected
                             </span>
                           </div>
                         </div>

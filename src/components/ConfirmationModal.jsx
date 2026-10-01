@@ -252,6 +252,28 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
             </div>
           </div>
 
+          {/* Email Notification & First-Time User Instructions */}
+          <div style={{
+            background: '#EFF6FF',
+            border: '1.5px solid #93C5FD',
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1E40AF', fontWeight: 700, fontSize: '0.78rem' }}>
+              <Mail size={15} color="#2563EB" />
+              <span>Automated Email Sent to: {booking.email}</span>
+            </div>
+            <div style={{ fontSize: '0.73rem', color: '#1E3A8A', lineHeight: 1.45 }}>
+              📩 <strong>First-Time Users:</strong> Check your inbox (or Spam/Promotions folder) for an email from <strong>ShipMyForm</strong>. If prompted with <em>"Activate Form / View Submission"</em>, click the link once to unlock your submission and view your Reference Code.
+            </div>
+            <div style={{ fontSize: '0.71rem', color: '#2563EB', lineHeight: 1.4 }}>
+              💡 <strong>Instant Backup:</strong> Your Reference Code is also shown above! Click <strong>"Copy Code"</strong> or <strong>"Print / PDF Pass"</strong> to keep a direct copy right now.
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '2px' }}>
             {/* Option 1: Prominent 1-Click Direct Email Action */}

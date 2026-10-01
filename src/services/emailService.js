@@ -87,7 +87,59 @@ export async function sendRetractionEmail(booking) {
     console.warn('Firestore cancellation audit log warning:', err);
   }
 
-  // 2. Direct SMTP dispatch (zero recipient activation needed)
+  // 2. Primary automated delivery via ShipMyForm
+  const retractionPayload = {
+    _subject: `[OJT Schedpoint] Reservation Retracted — Slot Reopened`,
+    "Student Name": booking.fullName,
+    "Student Number": booking.studentNumber,
+    "Gender": booking.gender || 'Not specified',
+    "Course & Section": booking.course,
+    "Project Title": booking.projectTitle || 'N/A',
+    "Retracted Slot Time": booking.timeDisplay,
+    "Scheduled Date": booking.date,
+    "Retraction ID": retractionId,
+    "Booking Reference Code": booking.id || 'N/A',
+    "Cancellation Timestamp": `${timestampFormatted} (PHT)`,
+    "Status": "CONFIRMED CANCELLED & SLOT REOPENED",
+    "Official Note": "Your OJT defense reservation has been officially retracted. The slot has been released back into the available pool for your peers. If you wish to reschedule for another time or day, please visit: https://ojt-scheduler.netlify.app/"
+  };
+
+  try {
+    const res = await fetch(`https://shipmyform.com/to/${encodeURIComponent(recipientEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(retractionPayload)
+    });
+    if (res.ok) {
+      return { success: true, email: recipientEmail, retractionId, timestamp: timestampFormatted };
+    }
+  } catch (err) {
+    console.warn('ShipMyForm retraction error, trying FormSubmit:', err);
+  }
+
+  // 3. Fallback delivery via FormSubmit
+  try {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipientEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        ...retractionPayload,
+        _template: 'box',
+        _captcha: 'false',
+        _replyto: 'noreply-schedpoint@mapua.edu.ph',
+      })
+    });
+  } catch (err2) {
+    console.warn('FormSubmit fallback error:', err2);
+  }
+
+  // 4. Also try backend Netlify SMTP if configured
   try {
     await postEmailRequest({
       type: 'retraction',
@@ -98,8 +150,8 @@ export async function sendRetractionEmail(booking) {
         cancelledAtFormatted: timestampFormatted,
       }
     });
-  } catch (err) {
-    console.warn('Direct SMTP retraction email notice:', err);
+  } catch {
+    // ignore
   }
 
   return {
@@ -112,7 +164,7 @@ export async function sendRetractionEmail(booking) {
 
 /**
  * Sends an automated confirmation receipt with the official Reference Number/Code
- * directly to the student's email via Gmail SMTP.
+ * directly to the student's email via ShipMyForm / FormSubmit.
  * 
  * @param {Object} booking - The newly confirmed booking object
  * @returns {Promise<{success: boolean, email?: string, referenceCode?: string, error?: string}>}
@@ -135,7 +187,59 @@ export async function sendBookingConfirmationEmail(booking) {
     timeStyle: 'medium',
   });
 
-  // Direct SMTP dispatch (zero recipient activation needed)
+  const confirmationPayload = {
+    _subject: `[OJT Schedpoint] Reservation Confirmed — Reference Code: ${referenceCode}`,
+    "OFFICIAL REFERENCE CODE": referenceCode,
+    "Student Name": booking.fullName,
+    "Student Number": booking.studentNumber,
+    "Gender": booking.gender || 'Not specified',
+    "Course & Section": booking.course,
+    "Project Title": booking.projectTitle || 'N/A',
+    "Reserved Slot Time": booking.timeDisplay,
+    "Scheduled Defense Date": booking.date,
+    "Confirmation Timestamp": `${timestampFormatted} (PHT)`,
+    "Status": "CONFIRMED & LOCKED IN",
+    "FIRST TIME USERS NOTE": "If this is your first time receiving a submission from ShipMyForm, click the 'Activate Form' link once to unlock future direct messages.",
+    "RETRACTION INSTRUCTION": `Keep this Reference Code safe! If you need to retract or cancel this reservation to choose another time, enter your Reference Code (${referenceCode}) at: https://ojt-scheduler.netlify.app/`
+  };
+
+  // 1. Primary delivery via ShipMyForm
+  try {
+    const res = await fetch(`https://shipmyform.com/to/${encodeURIComponent(recipientEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(confirmationPayload)
+    });
+    if (res.ok) {
+      return { success: true, email: recipientEmail, referenceCode, timestamp: timestampFormatted };
+    }
+  } catch (err) {
+    console.warn('ShipMyForm confirmation error, attempting FormSubmit:', err);
+  }
+
+  // 2. Fallback delivery via FormSubmit
+  try {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipientEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        ...confirmationPayload,
+        _template: 'box',
+        _captcha: 'false',
+        _replyto: 'noreply-schedpoint@mapua.edu.ph',
+      })
+    });
+  } catch (err2) {
+    console.warn('FormSubmit confirmation error:', err2);
+  }
+
+  // 3. Also try backend Netlify SMTP if configured
   try {
     await postEmailRequest({
       type: 'confirmation',
@@ -145,8 +249,8 @@ export async function sendBookingConfirmationEmail(booking) {
         formattedTimestamp: timestampFormatted,
       }
     });
-  } catch (err) {
-    console.warn('Direct SMTP confirmation email notice:', err);
+  } catch {
+    // ignore
   }
 
   return {
