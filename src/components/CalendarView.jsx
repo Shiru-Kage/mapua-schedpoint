@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -117,11 +117,24 @@ export default function CalendarView({
     setSelectedSlot(null);
   };
 
-  let displayedSlots = slotsData.all;
-  if (sessionFilter === 'morning') {
-    displayedSlots = slotsData.morning;
-  } else if (sessionFilter === 'afternoon') {
-    displayedSlots = slotsData.afternoon;
+  const isMorningEnabled = slotsData?.enableMorning !== false;
+  const isAfternoonEnabled = slotsData?.enableAfternoon !== false;
+  const bothSessionsEnabled = isMorningEnabled && isAfternoonEnabled;
+
+  useEffect(() => {
+    if (!isMorningEnabled && sessionFilter === 'morning') {
+      setSessionFilter('all');
+    }
+    if (!isAfternoonEnabled && sessionFilter === 'afternoon') {
+      setSessionFilter('all');
+    }
+  }, [isMorningEnabled, isAfternoonEnabled, sessionFilter, setSessionFilter]);
+
+  let displayedSlots = slotsData?.all || [];
+  if (sessionFilter === 'morning' && isMorningEnabled) {
+    displayedSlots = slotsData?.morning || [];
+  } else if (sessionFilter === 'afternoon' && isAfternoonEnabled) {
+    displayedSlots = slotsData?.afternoon || [];
   }
 
   const bookedCount = displayedSlots.filter(s => bookedSlotMap.has(s.id)).length;
@@ -246,38 +259,70 @@ export default function CalendarView({
         marginBottom: '16px',
         border: '1px solid var(--border-light)'
       }}>
-        <div className="segmented-control" style={{ width: '100%' }}>
-          <button
-            type="button"
-            onClick={() => setSessionFilter('all')}
-            className={`segmented-control-item ${sessionFilter === 'all' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
-          >
-            <span>All Sessions</span>
-          </button>
+        {bothSessionsEnabled ? (
+          <div className="segmented-control" style={{ width: '100%' }}>
+            <button
+              type="button"
+              onClick={() => setSessionFilter('all')}
+              className={`segmented-control-item ${sessionFilter === 'all' ? 'active' : ''}`}
+              style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
+            >
+              <span>All Sessions</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSessionFilter('morning')}
-            className={`segmented-control-item ${sessionFilter === 'morning' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
-            title={`Morning (${slotsData?.morningRange || '8:00 – 11:00 AM'})`}
-          >
-            <Sun size={14} />
-            <span>Morning ({slotsData?.morningLabel || '8–11 AM'})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSessionFilter('morning')}
+              className={`segmented-control-item ${sessionFilter === 'morning' ? 'active' : ''}`}
+              style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
+              title={`Morning (${slotsData?.morningRange || '8:00 – 11:00 AM'})`}
+            >
+              <Sun size={14} />
+              <span>Morning ({slotsData?.morningLabel || '8–11 AM'})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSessionFilter('afternoon')}
-            className={`segmented-control-item ${sessionFilter === 'afternoon' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
-            title={`Afternoon (${slotsData?.afternoonRange || '1:00 – 4:00 PM'})`}
-          >
-            <Sunset size={14} />
-            <span>Afternoon ({slotsData?.afternoonLabel || '1–4 PM'})</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setSessionFilter('afternoon')}
+              className={`segmented-control-item ${sessionFilter === 'afternoon' ? 'active' : ''}`}
+              style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', fontWeight: 700 }}
+              title={`Afternoon (${slotsData?.afternoonRange || '1:00 – 4:00 PM'})`}
+            >
+              <Sunset size={14} />
+              <span>Afternoon ({slotsData?.afternoonLabel || '1–4 PM'})</span>
+            </button>
+          </div>
+        ) : isMorningEnabled ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            width: '100%',
+            padding: '4px 8px',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)'
+          }}>
+            <Sun size={15} color="var(--mapua-crimson)" />
+            <span>Morning Session Schedule ({slotsData?.morningRange || '8:00 AM – 11:00 AM'})</span>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            width: '100%',
+            padding: '4px 8px',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)'
+          }}>
+            <Sunset size={15} color="var(--mapua-crimson)" />
+            <span>Afternoon Session Schedule ({slotsData?.afternoonRange || '1:00 PM – 4:00 PM'})</span>
+          </div>
+        )}
       </div>
 
       {/* UNAUTHORIZED DATE STATE OR TIMELINE / GRID VIEWS */}
@@ -331,10 +376,14 @@ export default function CalendarView({
                   padding: '8px 14px',
                   background: 'var(--bg-surface)',
                   borderColor: 'var(--border-medium)',
-                  color: 'var(--text-primary)'
+                  color: 'var(--text-primary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                📅 {getFormattedDateLabel(dStr)}
+                <CalendarIcon size={14} color="var(--mapua-crimson)" />
+                <span>{getFormattedDateLabel(dStr)}</span>
               </button>
             ))}
           </div>

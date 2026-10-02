@@ -6,6 +6,8 @@ export const DEFAULT_TIMESLOT_CONFIG = {
   afternoonStart: '13:00',
   afternoonEnd: '16:00',
   slotDurationMinutes: 10,
+  enableMorning: true,
+  enableAfternoon: true,
 };
 
 export function parseTimeString(timeStr, defaultHour = 8, defaultMinute = 0) {
@@ -111,6 +113,9 @@ export function generateSlotsForSession(config, dateString) {
 
 export function getAllSlotsForDate(dateString, customConfig = null) {
   const config = customConfig || DEFAULT_TIMESLOT_CONFIG;
+  const isMorningEnabled = config.enableMorning !== false;
+  const isAfternoonEnabled = config.enableAfternoon !== false;
+
   const morningConfig = buildSessionConfig(
     'morning',
     config.morningStart || '08:00',
@@ -124,8 +129,8 @@ export function getAllSlotsForDate(dateString, customConfig = null) {
     config.slotDurationMinutes || 10
   );
 
-  const morning = generateSlotsForSession(morningConfig, dateString);
-  const afternoon = generateSlotsForSession(afternoonConfig, dateString);
+  const morning = isMorningEnabled ? generateSlotsForSession(morningConfig, dateString) : [];
+  const afternoon = isAfternoonEnabled ? generateSlotsForSession(afternoonConfig, dateString) : [];
 
   return {
     morning,
@@ -137,6 +142,8 @@ export function getAllSlotsForDate(dateString, customConfig = null) {
     afternoonRange: afternoonConfig.timeRange,
     morningLabel: morningConfig.shortLabel,
     afternoonLabel: afternoonConfig.shortLabel,
+    enableMorning: isMorningEnabled,
+    enableAfternoon: isAfternoonEnabled,
   };
 }
 

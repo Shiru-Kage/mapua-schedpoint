@@ -343,7 +343,15 @@ export default function App() {
                   color: 'var(--text-muted)',
                   margin: 0
                 }}>
-                  {slotsData?.slotMinutes || 10}-minute individual time slots across Morning (<strong>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</strong>) and Afternoon (<strong>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</strong>) sessions. Slots are locked upon confirmation.
+                  {slotsData?.slotMinutes || 10}-minute individual presentation slots
+                  {slotsData?.enableMorning !== false && slotsData?.enableAfternoon !== false ? (
+                    <> across Morning (<strong>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</strong>) and Afternoon (<strong>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</strong>) sessions.</>
+                  ) : slotsData?.enableMorning !== false ? (
+                    <> for the Morning session (<strong>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</strong>).</>
+                  ) : (
+                    <> for the Afternoon session (<strong>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</strong>).</>
+                  )}
+                  {' '}Slots are locked upon confirmation.
                 </p>
               </div>
 

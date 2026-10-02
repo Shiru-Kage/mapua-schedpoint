@@ -16,11 +16,17 @@ export default function SlotPicker({
   const bookedSlotIds = new Set(bookings.map(b => b.slotId));
 
   // Filter slots based on active session tab
-  let displayedSlots = slotsData.all;
-  if (sessionFilter === 'morning') {
-    displayedSlots = slotsData.morning;
-  } else if (sessionFilter === 'afternoon') {
-    displayedSlots = slotsData.afternoon;
+  const isMorningEnabled = slotsData?.enableMorning !== false;
+  const isAfternoonEnabled = slotsData?.enableAfternoon !== false;
+  const morningSlots = slotsData?.morning || [];
+  const afternoonSlots = slotsData?.afternoon || [];
+  const allSlots = slotsData?.all || [];
+
+  let displayedSlots = allSlots;
+  if (sessionFilter === 'morning' && isMorningEnabled) {
+    displayedSlots = morningSlots;
+  } else if (sessionFilter === 'afternoon' && isAfternoonEnabled) {
+    displayedSlots = afternoonSlots;
   }
 
   // Count stats
@@ -29,11 +35,11 @@ export default function SlotPicker({
   const availableCount = totalSlotsCount - bookedCount;
 
   // Session stats for tabs
-  const morningBooked = slotsData.morning.filter(s => bookedSlotIds.has(s.id)).length;
-  const morningAvailable = slotsData.morning.length - morningBooked;
+  const morningBooked = morningSlots.filter(s => bookedSlotIds.has(s.id)).length;
+  const morningAvailable = morningSlots.length - morningBooked;
 
-  const afternoonBooked = slotsData.afternoon.filter(s => bookedSlotIds.has(s.id)).length;
-  const afternoonAvailable = slotsData.afternoon.length - afternoonBooked;
+  const afternoonBooked = afternoonSlots.filter(s => bookedSlotIds.has(s.id)).length;
+  const afternoonAvailable = afternoonSlots.length - afternoonBooked;
 
   return (
     <div className="glass-panel" style={{ padding: '24px' }}>
@@ -94,90 +100,94 @@ export default function SlotPicker({
         marginBottom: '20px'
       }}>
         {/* Morning Tab */}
-        <button
-          onClick={() => setSessionFilter('morning')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: sessionFilter === 'morning' 
-              ? 'rgba(99, 102, 241, 0.2)' 
-              : 'rgba(15, 23, 42, 0.6)',
-            border: sessionFilter === 'morning' 
-              ? '1.5px solid var(--accent-primary)' 
-              : '1px solid var(--border-subtle)',
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(245, 158, 11, 0.15)',
+        {isMorningEnabled && (
+          <button
+            onClick={() => setSessionFilter('morning')}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Sun size={17} color="#fbbf24" />
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: sessionFilter === 'morning' 
+                ? 'rgba(99, 102, 241, 0.2)' 
+                : 'rgba(15, 23, 42, 0.6)',
+              border: sessionFilter === 'morning' 
+                ? '1.5px solid var(--accent-primary)' 
+                : '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Sun size={17} color="#fbbf24" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Morning</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Morning</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.morningRange || '8:00 AM – 11:00 AM'}</div>
-            </div>
-          </div>
-          <span className={`badge ${morningAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
-            {morningAvailable} / {slotsData?.morning?.length || 18} Open
-          </span>
-        </button>
+            <span className={`badge ${morningAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
+              {morningAvailable} / {morningSlots.length} Open
+            </span>
+          </button>
+        )}
 
         {/* Afternoon Tab */}
-        <button
-          onClick={() => setSessionFilter('afternoon')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: sessionFilter === 'afternoon' 
-              ? 'rgba(99, 102, 241, 0.2)' 
-              : 'rgba(15, 23, 42, 0.6)',
-            border: sessionFilter === 'afternoon' 
-              ? '1.5px solid var(--accent-primary)' 
-              : '1px solid var(--border-subtle)',
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(239, 68, 68, 0.15)',
+        {isAfternoonEnabled && (
+          <button
+            onClick={() => setSessionFilter('afternoon')}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Sunset size={17} color="#f87171" />
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: sessionFilter === 'afternoon' 
+                ? 'rgba(99, 102, 241, 0.2)' 
+                : 'rgba(15, 23, 42, 0.6)',
+              border: sessionFilter === 'afternoon' 
+                ? '1.5px solid var(--accent-primary)' 
+                : '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Sunset size={17} color="#f87171" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Afternoon</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>Afternoon</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{slotsData?.afternoonRange || '1:00 PM – 4:00 PM'}</div>
-            </div>
-          </div>
-          <span className={`badge ${afternoonAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
-            {afternoonAvailable} / {slotsData?.afternoon?.length || 18} Open
-          </span>
-        </button>
+            <span className={`badge ${afternoonAvailable > 0 ? 'badge-available' : 'badge-booked'}`}>
+              {afternoonAvailable} / {afternoonSlots.length} Open
+            </span>
+          </button>
+        )}
 
         {/* All Sessions Tab */}
         <button

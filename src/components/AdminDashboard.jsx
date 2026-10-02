@@ -30,7 +30,7 @@ import {
   ChevronRight,
   ClipboardList
 } from 'lucide-react';
-import { getFormattedDateLabel } from '../utils/slotGenerator';
+import { getFormattedDateLabel, getAllSlotsForDate } from '../utils/slotGenerator';
 
 export default function AdminDashboard({
   bookings,
@@ -74,6 +74,8 @@ export default function AdminDashboard({
   const [afternoonStart, setAfternoonStart] = useState(timeslotConfig?.afternoonStart || '13:00');
   const [afternoonEnd, setAfternoonEnd] = useState(timeslotConfig?.afternoonEnd || '16:00');
   const [slotDuration, setSlotDuration] = useState(timeslotConfig?.slotDurationMinutes || 10);
+  const [enableMorning, setEnableMorning] = useState(timeslotConfig?.enableMorning !== false);
+  const [enableAfternoon, setEnableAfternoon] = useState(timeslotConfig?.enableAfternoon !== false);
   const [timeslotFeedback, setTimeslotFeedback] = useState('');
   const [isSavingTimeslot, setIsSavingTimeslot] = useState(false);
 
@@ -84,11 +86,30 @@ export default function AdminDashboard({
       setAfternoonStart(timeslotConfig.afternoonStart || '13:00');
       setAfternoonEnd(timeslotConfig.afternoonEnd || '16:00');
       setSlotDuration(timeslotConfig.slotDurationMinutes || 10);
+      setEnableMorning(timeslotConfig.enableMorning !== false);
+      setEnableAfternoon(timeslotConfig.enableAfternoon !== false);
     }
   }, [timeslotConfig]);
 
+  // Live preview of generated slots based on current form inputs
+  const previewSlots = useMemo(() => {
+    return getAllSlotsForDate(date || '2026-10-06', {
+      morningStart,
+      morningEnd,
+      afternoonStart,
+      afternoonEnd,
+      slotDurationMinutes: Number(slotDuration) || 10,
+      enableMorning,
+      enableAfternoon,
+    });
+  }, [date, morningStart, morningEnd, afternoonStart, afternoonEnd, slotDuration, enableMorning, enableAfternoon]);
+
   const handleSaveTimeslotConfig = async (e) => {
     if (e) e.preventDefault();
+    if (!enableMorning && !enableAfternoon) {
+      alert('At least one schedule session (Morning or Afternoon) must remain active.');
+      return;
+    }
     setIsSavingTimeslot(true);
     try {
       const newConfig = {
@@ -96,12 +117,14 @@ export default function AdminDashboard({
         morningEnd,
         afternoonStart,
         afternoonEnd,
-        slotDurationMinutes: Math.max(1, Math.min(120, Number(slotDuration) || 10))
+        slotDurationMinutes: Math.max(1, Math.min(120, Number(slotDuration) || 10)),
+        enableMorning,
+        enableAfternoon,
       };
       if (onUpdateTimeslotConfig) {
         await onUpdateTimeslotConfig(newConfig);
       }
-      setTimeslotFeedback('✓ Timeslot settings saved! Student defense schedule updated in real-time.');
+      setTimeslotFeedback('✓ Timeslot settings saved! Schedule availability updated in real-time.');
       setTimeout(() => setTimeslotFeedback(''), 4000);
     } catch (err) {
       console.error(err);
@@ -118,18 +141,22 @@ export default function AdminDashboard({
       morningEnd: '11:00',
       afternoonStart: '13:00',
       afternoonEnd: '16:00',
-      slotDurationMinutes: 10
+      slotDurationMinutes: 10,
+      enableMorning: true,
+      enableAfternoon: true,
     };
     setMorningStart('08:00');
     setMorningEnd('11:00');
     setAfternoonStart('13:00');
     setAfternoonEnd('16:00');
     setSlotDuration(10);
+    setEnableMorning(true);
+    setEnableAfternoon(true);
     if (onUpdateTimeslotConfig) {
       await onUpdateTimeslotConfig(defaults);
     }
     setIsSavingTimeslot(false);
-    setTimeslotFeedback('✓ Reset timeslots to defaults (8:00–11:00 AM & 1:00–4:00 PM, 10-min interval)');
+    setTimeslotFeedback('✓ Reset timeslots to defaults (Morning 8–11 AM & Afternoon 1–4 PM both enabled, 10-min interval)');
     setTimeout(() => setTimeslotFeedback(''), 4000);
   };
 
@@ -849,15 +876,39 @@ export default function AdminDashboard({
           }}>
             {/* Morning Session Hours */}
             <div style={{
-              background: 'var(--bg-subtle)',
-              border: '1px solid var(--border-medium)',
+              background: enableMorning ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+              border: enableMorning ? '1px solid var(--border-medium)' : '1px dashed var(--border-light)',
               borderRadius: 'var(--radius-md)',
-              padding: '14px'
+              padding: '14px',
+              opacity: enableMorning ? 1 : 0.65,
+              transition: 'all 0.2s ease'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '10px' }}>
-                <Clock size={15} color="var(--mapua-crimson)" />
-                <span>Morning Session Hours</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: enableMorning ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  <Clock size={15} color={enableMorning ? 'var(--mapua-crimson)' : 'var(--text-muted)'} />
+                  <span>Morning Session</span>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: enableMorning ? 'var(--mapua-crimson)' : 'var(--text-muted)' }}>
+                  <input
+                    type="checkbox"
+                    checked={enableMorning}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableAfternoon) {
+                        alert('Cannot disable both sessions. At least one session must remain active.');
+                        return;
+                      }
+                      setEnableMorning(e.target.checked);
+                    }}
+                    style={{ accentColor: 'var(--mapua-crimson)', width: '15px', height: '15px', cursor: 'pointer' }}
+                  />
+                  <span>{enableMorning ? 'Active' : 'Disabled'}</span>
+                </label>
               </div>
+              {!enableMorning && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontStyle: 'italic' }}>
+                  Morning session removed from student schedule.
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -867,16 +918,18 @@ export default function AdminDashboard({
                     type="time"
                     value={morningStart}
                     onChange={(e) => setMorningStart(e.target.value)}
-                    required
+                    disabled={!enableMorning}
+                    required={enableMorning}
                     style={{
                       width: '100%',
-                      background: 'var(--bg-surface)',
+                      background: enableMorning ? 'var(--bg-surface)' : 'var(--bg-subtle)',
                       border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '8px 10px',
                       fontSize: '0.875rem',
                       fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-primary)'
+                      color: enableMorning ? 'var(--text-primary)' : 'var(--text-muted)',
+                      cursor: enableMorning ? 'text' : 'not-allowed'
                     }}
                   />
                 </div>
@@ -888,16 +941,18 @@ export default function AdminDashboard({
                     type="time"
                     value={morningEnd}
                     onChange={(e) => setMorningEnd(e.target.value)}
-                    required
+                    disabled={!enableMorning}
+                    required={enableMorning}
                     style={{
                       width: '100%',
-                      background: 'var(--bg-surface)',
+                      background: enableMorning ? 'var(--bg-surface)' : 'var(--bg-subtle)',
                       border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '8px 10px',
                       fontSize: '0.875rem',
                       fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-primary)'
+                      color: enableMorning ? 'var(--text-primary)' : 'var(--text-muted)',
+                      cursor: enableMorning ? 'text' : 'not-allowed'
                     }}
                   />
                 </div>
@@ -906,15 +961,39 @@ export default function AdminDashboard({
 
             {/* Afternoon Session Hours */}
             <div style={{
-              background: 'var(--bg-subtle)',
-              border: '1px solid var(--border-medium)',
+              background: enableAfternoon ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+              border: enableAfternoon ? '1px solid var(--border-medium)' : '1px dashed var(--border-light)',
               borderRadius: 'var(--radius-md)',
-              padding: '14px'
+              padding: '14px',
+              opacity: enableAfternoon ? 1 : 0.65,
+              transition: 'all 0.2s ease'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '10px' }}>
-                <Clock size={15} color="var(--mapua-crimson)" />
-                <span>Afternoon Session Hours</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.875rem', color: enableAfternoon ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  <Clock size={15} color={enableAfternoon ? 'var(--mapua-crimson)' : 'var(--text-muted)'} />
+                  <span>Afternoon Session</span>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: enableAfternoon ? 'var(--mapua-crimson)' : 'var(--text-muted)' }}>
+                  <input
+                    type="checkbox"
+                    checked={enableAfternoon}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableMorning) {
+                        alert('Cannot disable both sessions. At least one session must remain active.');
+                        return;
+                      }
+                      setEnableAfternoon(e.target.checked);
+                    }}
+                    style={{ accentColor: 'var(--mapua-crimson)', width: '15px', height: '15px', cursor: 'pointer' }}
+                  />
+                  <span>{enableAfternoon ? 'Active' : 'Disabled'}</span>
+                </label>
               </div>
+              {!enableAfternoon && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px', fontStyle: 'italic' }}>
+                  Afternoon session removed from student schedule.
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -924,16 +1003,18 @@ export default function AdminDashboard({
                     type="time"
                     value={afternoonStart}
                     onChange={(e) => setAfternoonStart(e.target.value)}
-                    required
+                    disabled={!enableAfternoon}
+                    required={enableAfternoon}
                     style={{
                       width: '100%',
-                      background: 'var(--bg-surface)',
+                      background: enableAfternoon ? 'var(--bg-surface)' : 'var(--bg-subtle)',
                       border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '8px 10px',
                       fontSize: '0.875rem',
                       fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-primary)'
+                      color: enableAfternoon ? 'var(--text-primary)' : 'var(--text-muted)',
+                      cursor: enableAfternoon ? 'text' : 'not-allowed'
                     }}
                   />
                 </div>
@@ -945,16 +1026,18 @@ export default function AdminDashboard({
                     type="time"
                     value={afternoonEnd}
                     onChange={(e) => setAfternoonEnd(e.target.value)}
-                    required
+                    disabled={!enableAfternoon}
+                    required={enableAfternoon}
                     style={{
                       width: '100%',
-                      background: 'var(--bg-surface)',
+                      background: enableAfternoon ? 'var(--bg-surface)' : 'var(--bg-subtle)',
                       border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '8px 10px',
                       fontSize: '0.875rem',
                       fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-primary)'
+                      color: enableAfternoon ? 'var(--text-primary)' : 'var(--text-muted)',
+                      cursor: enableAfternoon ? 'text' : 'not-allowed'
                     }}
                   />
                 </div>
@@ -1058,7 +1141,12 @@ export default function AdminDashboard({
             borderTop: '1px dashed var(--border-light)'
           }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Current generated slots per day: <strong>{slotsData?.totalSlots || 0} slots</strong> ({slotsData?.morning?.length || 0} Morning + {slotsData?.afternoon?.length || 0} Afternoon)
+              Configured schedule: <strong>{previewSlots?.totalSlots || 0} slots / day</strong>
+              {' '}(
+              {enableMorning ? `${previewSlots?.morning?.length || 0} Morning` : 'Morning Removed'}
+              {' + '}
+              {enableAfternoon ? `${previewSlots?.afternoon?.length || 0} Afternoon` : 'Afternoon Removed'}
+              )
             </div>
 
             <button
