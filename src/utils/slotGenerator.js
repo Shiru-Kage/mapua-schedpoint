@@ -8,6 +8,7 @@ export const DEFAULT_TIMESLOT_CONFIG = {
   slotDurationMinutes: 10,
   enableMorning: true,
   enableAfternoon: true,
+  dateSessionOverrides: {},
 };
 
 export function parseTimeString(timeStr, defaultHour = 8, defaultMinute = 0) {
@@ -113,8 +114,15 @@ export function generateSlotsForSession(config, dateString) {
 
 export function getAllSlotsForDate(dateString, customConfig = null) {
   const config = customConfig || DEFAULT_TIMESLOT_CONFIG;
-  const isMorningEnabled = config.enableMorning !== false;
-  const isAfternoonEnabled = config.enableAfternoon !== false;
+  const dateOverride = config.dateSessionOverrides && dateString ? config.dateSessionOverrides[dateString] : null;
+
+  const isMorningEnabled = dateOverride?.morning !== undefined
+    ? Boolean(dateOverride.morning)
+    : (config.enableMorning !== false);
+
+  const isAfternoonEnabled = dateOverride?.afternoon !== undefined
+    ? Boolean(dateOverride.afternoon)
+    : (config.enableAfternoon !== false);
 
   const morningConfig = buildSessionConfig(
     'morning',

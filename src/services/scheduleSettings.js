@@ -118,6 +118,7 @@ export const DEFAULT_TIMESLOT_CONFIG = {
   slotDurationMinutes: 10,
   enableMorning: true,
   enableAfternoon: true,
+  dateSessionOverrides: {},
 };
 
 const TIMESLOT_STORAGE_KEY = 'ojt_timeslot_config';
@@ -134,6 +135,7 @@ export function getLocalTimeslotConfig() {
           slotDurationMinutes: Math.max(1, Math.min(120, Number(parsed.slotDurationMinutes) || 10)),
           enableMorning: parsed.enableMorning !== false,
           enableAfternoon: parsed.enableAfternoon !== false,
+          dateSessionOverrides: parsed.dateSessionOverrides || {},
         };
       }
     }
@@ -153,6 +155,7 @@ export function saveLocalTimeslotConfig(config) {
       slotDurationMinutes: Math.max(1, Math.min(120, Number(config.slotDurationMinutes) || 10)),
       enableMorning: config.enableMorning !== false,
       enableAfternoon: config.enableAfternoon !== false,
+      dateSessionOverrides: config.dateSessionOverrides || {},
     };
     localStorage.setItem(TIMESLOT_STORAGE_KEY, JSON.stringify(validated));
     return validated;

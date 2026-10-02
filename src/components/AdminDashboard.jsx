@@ -28,7 +28,9 @@ import {
   Undo2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Sun,
+  Sunset
 } from 'lucide-react';
 import { getFormattedDateLabel, getAllSlotsForDate } from '../utils/slotGenerator';
 
@@ -144,6 +146,7 @@ export default function AdminDashboard({
       slotDurationMinutes: 10,
       enableMorning: true,
       enableAfternoon: true,
+      dateSessionOverrides: {},
     };
     setMorningStart('08:00');
     setMorningEnd('11:00');
@@ -158,6 +161,38 @@ export default function AdminDashboard({
     setIsSavingTimeslot(false);
     setTimeslotFeedback('✓ Reset timeslots to defaults (Morning 8–11 AM & Afternoon 1–4 PM both enabled, 10-min interval)');
     setTimeout(() => setTimeslotFeedback(''), 4000);
+  };
+
+  const handleToggleDateSession = async (targetDate, sessionKey) => {
+    const currentOverrides = timeslotConfig?.dateSessionOverrides || {};
+    const dateSlots = getAllSlotsForDate(targetDate, timeslotConfig);
+    const isMorningActive = dateSlots.enableMorning !== false;
+    const isAfternoonActive = dateSlots.enableAfternoon !== false;
+
+    const newMorning = sessionKey === 'morning' ? !isMorningActive : isMorningActive;
+    const newAfternoon = sessionKey === 'afternoon' ? !isAfternoonActive : isAfternoonActive;
+
+    if (!newMorning && !newAfternoon) {
+      alert('At least one session (Morning or Afternoon) must remain active for this date. If you wish to close this date entirely, click the delete icon.');
+      return;
+    }
+
+    const newConfig = {
+      ...timeslotConfig,
+      dateSessionOverrides: {
+        ...currentOverrides,
+        [targetDate]: {
+          morning: newMorning,
+          afternoon: newAfternoon
+        }
+      }
+    };
+
+    if (onUpdateTimeslotConfig) {
+      await onUpdateTimeslotConfig(newConfig);
+    }
+    setDateFeedback(`Updated sessions for ${getFormattedDateLabel(targetDate)}: ${newMorning ? 'Morning Active' : 'Morning Off'}, ${newAfternoon ? 'Afternoon Active' : 'Afternoon Off'}`);
+    setTimeout(() => setDateFeedback(''), 3500);
   };
 
   const handleAddAllowedDate = async (e) => {
@@ -188,6 +223,13 @@ export default function AdminDashboard({
     const updated = allowedDates.filter(d => d !== dateStr);
     if (onUpdateAllowedDates) {
       await onUpdateAllowedDates(updated);
+    }
+    if (timeslotConfig?.dateSessionOverrides?.[dateStr]) {
+      const copy = { ...timeslotConfig.dateSessionOverrides };
+      delete copy[dateStr];
+      if (onUpdateTimeslotConfig) {
+        await onUpdateTimeslotConfig({ ...timeslotConfig, dateSessionOverrides: copy });
+      }
     }
     setDateFeedback(`Removed ${getFormattedDateLabel(dateStr)} from active schedule.`);
     setTimeout(() => setDateFeedback(''), 3000);
@@ -650,7 +692,7 @@ export default function AdminDashboard({
               </h3>
             </div>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
-              Designate which dates are available for student reservation. Currently active dates are displayed below.
+              Designate which dates are available for student reservation, and configure whether each date has Morning, Afternoon, or both sessions enabled.
             </p>
           </div>
 
@@ -688,13 +730,16 @@ export default function AdminDashboard({
         {/* Active Dates Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: '12px',
           marginBottom: '16px'
         }}>
           {allowedDates.map((dateStr) => {
             const dateBookingsCount = bookings.filter(b => b.date === dateStr).length;
             const isCurrentDate = dateStr === date;
+            const dateSlots = getAllSlotsForDate(dateStr, timeslotConfig);
+            const isDateMorningActive = dateSlots.enableMorning !== false;
+            const isDateAfternoonActive = dateSlots.enableAfternoon !== false;
 
             return (
               <div
@@ -706,7 +751,7 @@ export default function AdminDashboard({
                   padding: '12px 14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
+                  gap: '10px',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -735,6 +780,66 @@ export default function AdminDashboard({
                   </button>
                 </div>
 
+                {/* Per-Date Session Toggles */}
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    Active Sessions for this Date:
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '6px'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleDateSession(dateStr, 'morning')}
+                      style={{
+                        padding: '5px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        borderRadius: '6px',
+                        border: isDateMorningActive ? '1px solid var(--status-available-border)' : '1px dashed var(--border-medium)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        background: isDateMorningActive ? 'var(--status-available-bg)' : 'var(--bg-surface)',
+                        color: isDateMorningActive ? 'var(--status-available-text)' : 'var(--text-muted)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Morning session is ${isDateMorningActive ? 'Active' : 'Disabled'}. Click to toggle.`}
+                    >
+                      <Sun size={13} color={isDateMorningActive ? 'var(--status-available-text)' : 'var(--text-muted)'} />
+                      <span>Morning {isDateMorningActive ? '✓' : 'Off'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleDateSession(dateStr, 'afternoon')}
+                      style={{
+                        padding: '5px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        borderRadius: '6px',
+                        border: isDateAfternoonActive ? '1px solid var(--status-available-border)' : '1px dashed var(--border-medium)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px',
+                        background: isDateAfternoonActive ? 'var(--status-available-bg)' : 'var(--bg-surface)',
+                        color: isDateAfternoonActive ? 'var(--status-available-text)' : 'var(--text-muted)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Afternoon session is ${isDateAfternoonActive ? 'Active' : 'Disabled'}. Click to toggle.`}
+                    >
+                      <Sunset size={13} color={isDateAfternoonActive ? 'var(--status-available-text)' : 'var(--text-muted)'} />
+                      <span>Afternoon {isDateAfternoonActive ? '✓' : 'Off'}</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -744,7 +849,7 @@ export default function AdminDashboard({
                   borderTop: '1px dashed var(--border-light)'
                 }}>
                   <span style={{ fontWeight: 600, color: dateBookingsCount > 0 ? 'var(--mapua-crimson)' : 'var(--status-available-text)' }}>
-                    {dateBookingsCount} / 42 Booked
+                    {dateBookingsCount} / {dateSlots?.totalSlots || 0} Booked
                   </span>
                   <button
                     type="button"

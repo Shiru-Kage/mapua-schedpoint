@@ -376,6 +376,7 @@ export default function App() {
                     setErrorMessage('');
                   }}
                   slotsData={slotsData}
+                  timeslotConfig={timeslotConfig}
                   selectedSlot={selectedSlot}
                   setSelectedSlot={(slot) => {
                     setSelectedSlot(slot);

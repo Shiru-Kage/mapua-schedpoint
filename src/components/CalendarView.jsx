@@ -13,7 +13,7 @@ import {
   RotateCcw,
   AlertTriangle
 } from 'lucide-react';
-import { getFormattedDateLabel } from '../utils/slotGenerator';
+import { getFormattedDateLabel, getAllSlotsForDate } from '../utils/slotGenerator';
 
 function getTodayString() {
   const now = new Date();
@@ -27,6 +27,7 @@ export default function CalendarView({
   date,
   setDate,
   slotsData,
+  timeslotConfig = null,
   selectedSlot,
   setSelectedSlot,
   bookings,
@@ -66,7 +67,8 @@ export default function CalendarView({
         const monthName = target.toLocaleDateString('en-US', { month: 'short' });
 
         const dayBookedCount = bookings.filter(b => b.date === dateStr).length;
-        const totalPossibleSlots = slotsData?.totalSlots || 42;
+        const daySlotsData = getAllSlotsForDate(dateStr, timeslotConfig);
+        const totalPossibleSlots = daySlotsData?.totalSlots || 0;
         const dayOpenCount = Math.max(0, totalPossibleSlots - dayBookedCount);
 
         return {
@@ -76,6 +78,7 @@ export default function CalendarView({
           monthName,
           dayBookedCount,
           dayOpenCount,
+          totalPossibleSlots,
           isSelected: dateStr === date,
         };
       } catch {
@@ -85,12 +88,13 @@ export default function CalendarView({
           dayNum: dateStr,
           monthName: '',
           dayBookedCount: 0,
-          dayOpenCount: slotsData?.totalSlots || 42,
+          dayOpenCount: 0,
+          totalPossibleSlots: 0,
           isSelected: dateStr === date,
         };
       }
     });
-  }, [allowedDates, date, bookings, slotsData?.totalSlots]);
+  }, [allowedDates, date, bookings, timeslotConfig]);
 
   // Step active date to previous or next allowed date
   const shiftDateByStep = (direction) => {
