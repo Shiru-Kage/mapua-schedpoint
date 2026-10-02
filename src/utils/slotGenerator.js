@@ -124,34 +124,54 @@ export function getAllSlotsForDate(dateString, customConfig = null) {
     ? Boolean(dateOverride.afternoon)
     : (config.enableAfternoon !== false);
 
+  const morningStart = dateOverride?.morningStart || config.morningStart || '08:00';
+  const morningEnd = dateOverride?.morningEnd || config.morningEnd || '11:00';
+  const afternoonStart = dateOverride?.afternoonStart || config.afternoonStart || '13:00';
+  const afternoonEnd = dateOverride?.afternoonEnd || config.afternoonEnd || '16:00';
+  const slotMinutes = Math.max(1, Math.min(120, Number(dateOverride?.slotDurationMinutes || config.slotDurationMinutes || 10)));
+
   const morningConfig = buildSessionConfig(
     'morning',
-    config.morningStart || '08:00',
-    config.morningEnd || '11:00',
-    config.slotDurationMinutes || 10
+    morningStart,
+    morningEnd,
+    slotMinutes
   );
   const afternoonConfig = buildSessionConfig(
     'afternoon',
-    config.afternoonStart || '13:00',
-    config.afternoonEnd || '16:00',
-    config.slotDurationMinutes || 10
+    afternoonStart,
+    afternoonEnd,
+    slotMinutes
   );
 
   const morning = isMorningEnabled ? generateSlotsForSession(morningConfig, dateString) : [];
   const afternoon = isAfternoonEnabled ? generateSlotsForSession(afternoonConfig, dateString) : [];
+
+  const isCustomized = Boolean(
+    dateOverride && (
+      dateOverride.isCustom ||
+      dateOverride.morningStart ||
+      dateOverride.morningEnd ||
+      dateOverride.afternoonStart ||
+      dateOverride.afternoonEnd ||
+      dateOverride.slotDurationMinutes ||
+      (dateOverride.morning !== undefined && dateOverride.morning !== (config.enableMorning !== false)) ||
+      (dateOverride.afternoon !== undefined && dateOverride.afternoon !== (config.enableAfternoon !== false))
+    )
+  );
 
   return {
     morning,
     afternoon,
     all: [...morning, ...afternoon],
     totalSlots: morning.length + afternoon.length,
-    slotMinutes: morningConfig.slotMinutes,
+    slotMinutes,
     morningRange: morningConfig.timeRange,
     afternoonRange: afternoonConfig.timeRange,
     morningLabel: morningConfig.shortLabel,
     afternoonLabel: afternoonConfig.shortLabel,
     enableMorning: isMorningEnabled,
     enableAfternoon: isAfternoonEnabled,
+    isCustomized,
   };
 }
 

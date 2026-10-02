@@ -33,6 +33,7 @@ import {
   Sunset
 } from 'lucide-react';
 import { getFormattedDateLabel, getAllSlotsForDate } from '../utils/slotGenerator';
+import DayScheduleModal from './DayScheduleModal';
 
 export default function AdminDashboard({
   bookings,
@@ -80,6 +81,7 @@ export default function AdminDashboard({
   const [enableAfternoon, setEnableAfternoon] = useState(timeslotConfig?.enableAfternoon !== false);
   const [timeslotFeedback, setTimeslotFeedback] = useState('');
   const [isSavingTimeslot, setIsSavingTimeslot] = useState(false);
+  const [dayScheduleModalDate, setDayScheduleModalDate] = useState(null);
 
   useEffect(() => {
     if (timeslotConfig) {
@@ -192,6 +194,38 @@ export default function AdminDashboard({
       await onUpdateTimeslotConfig(newConfig);
     }
     setDateFeedback(`Updated sessions for ${getFormattedDateLabel(targetDate)}: ${newMorning ? 'Morning Active' : 'Morning Off'}, ${newAfternoon ? 'Afternoon Active' : 'Afternoon Off'}`);
+    setTimeout(() => setDateFeedback(''), 3500);
+  };
+
+  const handleSaveDayConfig = async (targetDate, dayConfig) => {
+    const currentOverrides = timeslotConfig?.dateSessionOverrides || {};
+    const newConfig = {
+      ...timeslotConfig,
+      dateSessionOverrides: {
+        ...currentOverrides,
+        [targetDate]: dayConfig
+      }
+    };
+    if (onUpdateTimeslotConfig) {
+      await onUpdateTimeslotConfig(newConfig);
+    }
+    setDateFeedback(`✓ Saved custom defense timeslot configuration for ${getFormattedDateLabel(targetDate)}.`);
+    setTimeout(() => setDateFeedback(''), 3500);
+  };
+
+  const handleResetDayConfig = async (targetDate) => {
+    if (timeslotConfig?.dateSessionOverrides?.[targetDate]) {
+      const copy = { ...timeslotConfig.dateSessionOverrides };
+      delete copy[targetDate];
+      const newConfig = {
+        ...timeslotConfig,
+        dateSessionOverrides: copy
+      };
+      if (onUpdateTimeslotConfig) {
+        await onUpdateTimeslotConfig(newConfig);
+      }
+    }
+    setDateFeedback(`✓ Reset ${getFormattedDateLabel(targetDate)} back to Global Defaults.`);
     setTimeout(() => setDateFeedback(''), 3500);
   };
 
@@ -740,6 +774,7 @@ export default function AdminDashboard({
             const dateSlots = getAllSlotsForDate(dateStr, timeslotConfig);
             const isDateMorningActive = dateSlots.enableMorning !== false;
             const isDateAfternoonActive = dateSlots.enableAfternoon !== false;
+            const isCustomized = Boolean(dateSlots.isCustomized);
 
             return (
               <div
@@ -760,8 +795,35 @@ export default function AdminDashboard({
                     <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {getFormattedDateLabel(dateStr)}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      {dateStr}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        {dateStr}
+                      </span>
+                      {isCustomized ? (
+                        <span style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(196, 18, 48, 0.12)',
+                          color: 'var(--mapua-crimson)',
+                          border: '1px solid rgba(196, 18, 48, 0.25)'
+                        }}>
+                          Custom Hours
+                        </span>
+                      ) : (
+                        <span style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: 600,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-muted)',
+                          border: '1px solid var(--border-light)'
+                        }}>
+                          Global Defaults
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
@@ -782,8 +844,13 @@ export default function AdminDashboard({
 
                 {/* Per-Date Session Toggles */}
                 <div>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                    Active Sessions for this Date:
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      Active Sessions:
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {dateSlots.slotMinutes}m / slot
+                    </span>
                   </div>
                   <div style={{
                     display: 'grid',
@@ -808,7 +875,7 @@ export default function AdminDashboard({
                         color: isDateMorningActive ? 'var(--status-available-text)' : 'var(--text-muted)',
                         transition: 'all 0.15s ease'
                       }}
-                      title={`Morning session is ${isDateMorningActive ? 'Active' : 'Disabled'}. Click to toggle.`}
+                      title={`Morning (${dateSlots.morningRange}). Click to toggle.`}
                     >
                       <Sun size={13} color={isDateMorningActive ? 'var(--status-available-text)' : 'var(--text-muted)'} />
                       <span>Morning {isDateMorningActive ? '✓' : 'Off'}</span>
@@ -832,13 +899,36 @@ export default function AdminDashboard({
                         color: isDateAfternoonActive ? 'var(--status-available-text)' : 'var(--text-muted)',
                         transition: 'all 0.15s ease'
                       }}
-                      title={`Afternoon session is ${isDateAfternoonActive ? 'Active' : 'Disabled'}. Click to toggle.`}
+                      title={`Afternoon (${dateSlots.afternoonRange}). Click to toggle.`}
                     >
                       <Sunset size={13} color={isDateAfternoonActive ? 'var(--status-available-text)' : 'var(--text-muted)'} />
                       <span>Afternoon {isDateAfternoonActive ? '✓' : 'Off'}</span>
                     </button>
                   </div>
                 </div>
+
+                {/* Button to Open Day Schedule Modal */}
+                <button
+                  type="button"
+                  onClick={() => setDayScheduleModalDate(dateStr)}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    background: isCustomized ? 'var(--bg-surface)' : 'var(--bg-surface)',
+                    borderColor: isCustomized ? 'var(--mapua-crimson)' : 'var(--border-medium)',
+                    color: isCustomized ? 'var(--mapua-crimson)' : 'var(--text-primary)'
+                  }}
+                  title={`Configure defense start/end hours and interval for ${dateStr}`}
+                >
+                  <Sliders size={13} color={isCustomized ? 'var(--mapua-crimson)' : 'var(--text-secondary)'} />
+                  <span>{isCustomized ? 'Custom Timeslot Active • Edit' : 'Configure Day Hours & Interval'}</span>
+                </button>
 
                 <div style={{
                   display: 'flex',
@@ -932,11 +1022,11 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sliders size={18} color="var(--mapua-crimson)" />
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                Timeslot & Schedule Hours Configuration
+                Global Configuration (Default Schedule)
               </h3>
             </div>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
-              Adjust start and end times for Morning and Afternoon sessions, and set the slot presentation interval (default: 10 minutes).
+              Establish fallback schedule hours and presentation intervals applied across all dates, unless customized for a specific day.
             </p>
           </div>
 
@@ -946,10 +1036,10 @@ export default function AdminDashboard({
             disabled={isSavingTimeslot}
             className="btn btn-secondary"
             style={{ fontSize: '0.75rem', padding: '6px 10px', gap: '6px' }}
-            title="Reset to default times: Morning 8-11 AM, Afternoon 1-4 PM, 10 min interval"
+            title="Reset global defaults to: Morning 8-11 AM, Afternoon 1-4 PM, 10 min interval"
           >
             <RotateCcw size={13} />
-            <span>Reset to Defaults (8–11 AM, 1–4 PM, 10m)</span>
+            <span>Reset Global Defaults (8–11 AM, 1–4 PM, 10m)</span>
           </button>
         </div>
 
@@ -1261,7 +1351,7 @@ export default function AdminDashboard({
               style={{ padding: '8px 16px', fontSize: '0.8125rem', gap: '6px' }}
             >
               <Save size={14} />
-              <span>{isSavingTimeslot ? 'Saving Changes...' : 'Save Timeslot Configuration'}</span>
+              <span>{isSavingTimeslot ? 'Saving Changes...' : 'Save Global Configuration'}</span>
             </button>
           </div>
         </form>
@@ -2493,6 +2583,19 @@ export default function AdminDashboard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Day Schedule Modal for per-date configuration */}
+      {dayScheduleModalDate && (
+        <DayScheduleModal
+          isOpen={!!dayScheduleModalDate}
+          onClose={() => setDayScheduleModalDate(null)}
+          date={dayScheduleModalDate}
+          allowedDates={allowedDates}
+          timeslotConfig={timeslotConfig}
+          onSaveDayConfig={handleSaveDayConfig}
+          onResetDayConfig={handleResetDayConfig}
+        />
       )}
     </div>
   );
