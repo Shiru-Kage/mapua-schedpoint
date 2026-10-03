@@ -43,8 +43,8 @@ export default function BookingForm({
       const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
       setFormData(prev => ({ ...prev, [name]: digitsOnly }));
 
-      if (digitsOnly.length > 0 && !digitsOnly.startsWith('202')) {
-        setStudentNumError('Student number must start with 202x (e.g. 2023...)');
+      if (digitsOnly.length > 0 && !digitsOnly.startsWith('20')) {
+        setStudentNumError('Student number must start with 20xx (from year 2000 onwards)');
       } else if (digitsOnly.length > 0 && digitsOnly.length < 10) {
         setStudentNumError(`10 digits required (${digitsOnly.length}/10 digits entered)`);
       } else {
@@ -90,8 +90,8 @@ export default function BookingForm({
     if (!selectedSlot || duplicateBooking) return;
 
     const cleanNum = formData.studentNumber.trim();
-    if (!/^202\d{7}$/.test(cleanNum)) {
-      setStudentNumError('Student number must be exactly 10 digits starting with 202x (e.g. 2023123456).');
+    if (!/^20\d{8}$/.test(cleanNum)) {
+      setStudentNumError('Student number must be exactly 10 digits starting with 20xx (from year 2000 onwards, e.g. 2020123456).');
       return;
     }
 
@@ -364,12 +364,12 @@ export default function BookingForm({
               inputMode="numeric"
               maxLength={10}
               required
-              placeholder="e.g. 2023123456"
+              placeholder="e.g. 2020123456"
               value={formData.studentNumber}
               onChange={handleChange}
               className="form-input"
-              pattern="^202[0-9]{7}$"
-              title="Student number must be exactly 10 digits starting with 202x (e.g. 2023123456)"
+              pattern="^20[0-9]{8}$"
+              title="Student number must be exactly 10 digits starting with 20xx (e.g. 2020123456)"
               style={{
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.04em',
@@ -384,7 +384,7 @@ export default function BookingForm({
             </div>
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Must be exactly 10 digits starting with batch <strong>202x</strong> (e.g. 2020xxxxxx to 2026xxxxxx).
+              Must be exactly 10 digits starting with batch <strong>2000+</strong> (e.g. 2019xxxxxx, 2022xxxxxx).
             </div>
           )}
         </div>

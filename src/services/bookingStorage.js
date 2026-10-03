@@ -86,12 +86,12 @@ export async function submitBooking(bookingPayload) {
     createdAt: new Date().toISOString(),
   };
 
-  // Validate 10-digit Mapúa student number template starting with 202x
+  // Validate 10-digit Mapúa student number template starting from year 2000+
   const cleanStudentNum = String(studentNumber || '').trim();
-  if (!/^202\d{7}$/.test(cleanStudentNum)) {
+  if (!/^20\d{8}$/.test(cleanStudentNum)) {
     return {
       success: false,
-      error: 'Student Number must be exactly 10 digits starting with 202x (e.g. 2023123456).'
+      error: 'Student Number must be exactly 10 digits starting with 20xx (from year 2000 onwards, e.g. 2020123456).'
     };
   }
 
