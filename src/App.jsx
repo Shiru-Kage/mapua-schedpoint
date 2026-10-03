@@ -17,7 +17,8 @@ import {
   subscribeToBookings,
   updateBookingAttendance,
   batchUpdateBookingAttendance,
-  updateBookingProjectTitle
+  updateBookingProjectTitle,
+  updateBookingDetails
 } from './services/bookingStorage';
 import { 
   getLocalAllowedDates, 
@@ -301,6 +302,19 @@ export default function App() {
     await updateBookingProjectTitle(slotId, projectTitle);
   };
 
+  const handleUpdateBookingDetails = async (slotId, updatedFields) => {
+    try {
+      const result = await updateBookingDetails(slotId, updatedFields);
+      if (result.success && result.booking) {
+        setBookings(prev => prev.map(b => (b.slotId === slotId || b.id === slotId) ? result.booking : b));
+      }
+      return result;
+    } catch (err) {
+      console.error('Failed to update booking details:', err);
+      return { success: false, error: err.message || 'Failed to update reservation details.' };
+    }
+  };
+
   const handleLogout = () => {
     clearSession();
     setCurrentUser(null);
@@ -484,6 +498,7 @@ export default function App() {
         onClose={() => setShowRetractModal(false)}
         bookings={bookings}
         onRetract={handleCancelBooking}
+        onUpdateBooking={handleUpdateBookingDetails}
       />
 
       {/* Instructor Auth Modal */}

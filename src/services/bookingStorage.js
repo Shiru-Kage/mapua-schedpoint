@@ -428,6 +428,104 @@ export async function updateBookingProjectTitle(slotId, projectTitle) {
   return { success: true, updatedBookings: updated };
 }
 
+export async function updateBookingDetails(slotId, updatedFields) {
+  const current = getLocalBookings();
+  const existingIndex = current.findIndex(b => b.slotId === slotId || b.id === slotId);
+  if (existingIndex === -1) {
+    return { success: false, error: 'Booking reservation not found.' };
+  }
+
+  const existingBooking = current[existingIndex];
+
+  // Validate groupmates if isGroup is true
+  const isGroup = Boolean(updatedFields.isGroup);
+  const groupmates = isGroup && Array.isArray(updatedFields.groupmates)
+    ? updatedFields.groupmates.map(g => ({
+        fullName: (g.fullName || '').trim(),
+        studentNumber: (g.studentNumber || '').trim(),
+      })).filter(g => g.fullName && g.studentNumber)
+    : [];
+
+  if (isGroup) {
+    const studentNumSet = new Set([existingBooking.studentNumber]);
+    for (let i = 0; i < groupmates.length; i++) {
+      const gm = groupmates[i];
+      if (!gm.fullName) {
+        return { success: false, error: `Groupmate #${i + 1} must have a valid full name.` };
+      }
+      if (!/^20\d{8}$/.test(gm.studentNumber)) {
+        return {
+          success: false,
+          error: `Groupmate #${i + 1} (${gm.fullName}) student number must be 10 digits starting with 20xx (e.g. 2021123456).`
+        };
+      }
+      if (studentNumSet.has(gm.studentNumber)) {
+        return {
+          success: false,
+          error: `Duplicate student ID "${gm.studentNumber}" found in group submission.`
+        };
+      }
+      studentNumSet.add(gm.studentNumber);
+
+      // Check against other bookings on the same date
+      const conflict = current.find(b => {
+        if (b.slotId === existingBooking.slotId || b.date !== existingBooking.date) return false;
+        if (String(b.studentNumber || '').trim().toLowerCase() === gm.studentNumber.toLowerCase()) return true;
+        if (Array.isArray(b.groupmates)) {
+          return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === gm.studentNumber.toLowerCase());
+        }
+        return false;
+      });
+      if (conflict) {
+        return {
+          success: false,
+          error: `Groupmate "${gm.fullName}" (${gm.studentNumber}) already holds a reservation on ${conflict.date} (${conflict.timeDisplay}).`
+        };
+      }
+    }
+  }
+
+  const merged = {
+    ...existingBooking,
+    fullName: updatedFields.fullName !== undefined ? updatedFields.fullName.trim() : existingBooking.fullName,
+    gender: updatedFields.gender !== undefined ? updatedFields.gender.trim() : existingBooking.gender,
+    course: updatedFields.course !== undefined ? updatedFields.course.trim() : existingBooking.course,
+    projectTitle: updatedFields.projectTitle !== undefined ? updatedFields.projectTitle.trim() : existingBooking.projectTitle,
+    email: updatedFields.email !== undefined ? updatedFields.email.trim().toLowerCase() : existingBooking.email,
+    isGroup,
+    groupmates,
+    updatedAt: new Date().toISOString()
+  };
+
+  const updated = [...current];
+  updated[existingIndex] = merged;
+  saveLocalBookings(updated);
+
+  // 1. Firebase Firestore
+  const db = getFirebaseDb();
+  if (db) {
+    try {
+      await setDoc(doc(db, 'bookings', existingBooking.slotId), merged, { merge: true });
+    } catch (e) {
+      console.warn('Firestore booking details update error:', e);
+    }
+  }
+
+  // 2. Server API fallback
+  try {
+    await fetch(`/api/bookings/${encodeURIComponent(existingBooking.slotId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(merged)
+    });
+  } catch {
+    // API not running
+  }
+
+  window.dispatchEvent(new CustomEvent('mapua_bookings_updated', { detail: updated }));
+  return { success: true, booking: merged, updatedBookings: updated };
+}
+
 // Real-time synchronization subscriber
 export function subscribeToBookings(onUpdate) {
   let unsubFirebase = null;
