@@ -351,6 +351,10 @@ export default function AdminDashboard({
       result = result.filter(b =>
         b.fullName?.toLowerCase().includes(q) ||
         b.studentNumber?.toLowerCase().includes(q) ||
+        (Array.isArray(b.groupmates) && b.groupmates.some(g =>
+          g.fullName?.toLowerCase().includes(q) ||
+          g.studentNumber?.toLowerCase().includes(q)
+        )) ||
         b.course?.toLowerCase().includes(q) ||
         b.projectTitle?.toLowerCase().includes(q) ||
         b.email?.toLowerCase().includes(q) ||
@@ -476,6 +480,7 @@ export default function AdminDashboard({
         'Slot Time',
         'Student Name',
         'Student Number',
+        'Group Members',
         'Gender',
         'Course & Section',
         'Project Title',
@@ -489,6 +494,7 @@ export default function AdminDashboard({
         `"${(b.timeDisplay || '').replace(/"/g, '""')}"`,
         `"${(b.fullName || '').replace(/"/g, '""')}"`,
         `"${(b.studentNumber || '').replace(/"/g, '""')}"`,
+        `"${(Array.isArray(b.groupmates) && b.groupmates.length > 0 ? b.groupmates.map(g => `${g.fullName} (${g.studentNumber})`).join('; ') : 'None / Individual').replace(/"/g, '""')}"`,
         `"${(b.gender || 'Not specified').replace(/"/g, '""')}"`,
         `"${(b.course || '').replace(/"/g, '""')}"`,
         `"${(b.projectTitle || '').replace(/"/g, '""')}"`,
@@ -2020,7 +2026,13 @@ export default function AdminDashboard({
 
                         {/* Student Name */}
                         <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {b.fullName}
+                          <div>{b.fullName}</div>
+                          {Array.isArray(b.groupmates) && b.groupmates.length > 0 && (
+                            <div style={{ marginTop: '4px', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                              <span style={{ fontWeight: 700, color: 'var(--mapua-crimson)' }}>Group ({b.groupmates.length + 1}): </span>
+                              {b.groupmates.map(g => `${g.fullName} (${g.studentNumber})`).join(', ')}
+                            </div>
+                          )}
                         </td>
 
                         {/* Student Number */}
@@ -2123,6 +2135,12 @@ export default function AdminDashboard({
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
                           ID: {b.studentNumber} {b.gender ? `• ${b.gender}` : ''}
                         </div>
+                        {Array.isArray(b.groupmates) && b.groupmates.length > 0 && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--mapua-crimson)' }}>Group ({b.groupmates.length + 1}): </span>
+                            {b.groupmates.map(g => `${g.fullName} (${g.studentNumber})`).join(', ')}
+                          </div>
+                        )}
                       </div>
                       <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
                         {b.course}

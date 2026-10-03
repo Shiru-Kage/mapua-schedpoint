@@ -82,6 +82,15 @@ export async function submitBooking(bookingPayload) {
     course: (course || '').trim(),
     projectTitle: (projectTitle || bookingPayload.projectTitle || '').trim(),
     email: (email || '').trim().toLowerCase(),
+    isGroup: Boolean(bookingPayload.isGroup && Array.isArray(bookingPayload.groupmates) && bookingPayload.groupmates.length > 0),
+    groupmates: Array.isArray(bookingPayload.groupmates)
+      ? bookingPayload.groupmates
+          .map(g => ({
+            fullName: (g.fullName || '').trim(),
+            studentNumber: (g.studentNumber || '').trim(),
+          }))
+          .filter(g => g.fullName && g.studentNumber)
+      : [],
     attendanceStatus: 'active', // 'active' | 'finished' | 'missed'
     createdAt: new Date().toISOString(),
   };
@@ -93,6 +102,30 @@ export async function submitBooking(bookingPayload) {
       success: false,
       error: 'Student Number must be exactly 10 digits starting with 20xx (from year 2000 onwards, e.g. 2020123456).'
     };
+  }
+
+  // Validate groupmates if group defense is enabled
+  if (booking.isGroup) {
+    const studentNumSet = new Set([cleanStudentNum]);
+    for (let i = 0; i < booking.groupmates.length; i++) {
+      const gm = booking.groupmates[i];
+      if (!gm.fullName) {
+        return { success: false, error: `Groupmate #${i + 1} must have a valid full name.` };
+      }
+      if (!/^20\d{8}$/.test(gm.studentNumber)) {
+        return {
+          success: false,
+          error: `Groupmate #${i + 1} (${gm.fullName}) student number must be 10 digits starting with 20xx (e.g. 2021123456).`
+        };
+      }
+      if (studentNumSet.has(gm.studentNumber)) {
+        return {
+          success: false,
+          error: `Duplicate student ID "${gm.studentNumber}" found in group submission.`
+        };
+      }
+      studentNumSet.add(gm.studentNumber);
+    }
   }
 
   // Validate email domain (@mymail.mapua.edu.ph, @mapua.edu.ph, or @gmail.com)
@@ -117,14 +150,41 @@ export async function submitBooking(bookingPayload) {
     };
   }
 
-  const existingStudent = current.find(b => 
-    String(b.studentNumber || '').trim().toLowerCase() === cleanStudentNum.toLowerCase() && b.date === date
-  );
+  // Check primary student duplicate
+  const existingStudent = current.find(b => {
+    if (b.date !== date) return false;
+    if (String(b.studentNumber || '').trim().toLowerCase() === cleanStudentNum.toLowerCase()) return true;
+    if (Array.isArray(b.groupmates)) {
+      return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === cleanStudentNum.toLowerCase());
+    }
+    return false;
+  });
   if (existingStudent) {
     return {
       success: false,
       error: `Duplicate submission: Student Number "${studentNumber}" already has a reserved slot (${existingStudent.timeDisplay}) on this date. You can retract your existing booking to select a new time.`
     };
+  }
+
+  // Check groupmates duplicates against existing bookings on this date
+  if (booking.isGroup) {
+    for (const gm of booking.groupmates) {
+      const gmNumClean = gm.studentNumber.toLowerCase();
+      const existingGroupmate = current.find(b => {
+        if (b.date !== date) return false;
+        if (String(b.studentNumber || '').trim().toLowerCase() === gmNumClean) return true;
+        if (Array.isArray(b.groupmates)) {
+          return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === gmNumClean);
+        }
+        return false;
+      });
+      if (existingGroupmate) {
+        return {
+          success: false,
+          error: `Duplicate submission: Groupmate "${gm.fullName}" (${gm.studentNumber}) already has a reserved slot (${existingGroupmate.timeDisplay}) on this date.`
+        };
+      }
+    }
   }
 
   // 1. Try Firebase Firestore if configured

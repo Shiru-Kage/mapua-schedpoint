@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, Hash, BookOpen, Mail, Clock, AlertCircle, ArrowRight, RotateCcw, FileText } from 'lucide-react';
+import { User, Users, Hash, BookOpen, Mail, Clock, AlertCircle, ArrowRight, RotateCcw, FileText, Plus, Trash2 } from 'lucide-react';
 import { getFormattedDateLabel } from '../utils/slotGenerator';
 
 export default function BookingForm({
@@ -23,6 +23,11 @@ export default function BookingForm({
   });
   const [studentNumError, setStudentNumError] = useState('');
   const [emailError, setEmailError] = useState('');
+
+  // Groupmates state
+  const [isGroup, setIsGroup] = useState(false);
+  const [groupmates, setGroupmates] = useState([]); // [{ fullName: '', studentNumber: '' }]
+  const [groupmatesError, setGroupmatesError] = useState('');
 
   // Auto-clear stale collision error if the current slot is open / not claimed
   useEffect(() => {
@@ -76,14 +81,93 @@ export default function BookingForm({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Instant pre-validation for duplicate student number on this date
+  const handleToggleGroup = (e) => {
+    const checked = e.target.checked;
+    setIsGroup(checked);
+    setGroupmatesError('');
+    if (checked && groupmates.length === 0) {
+      setGroupmates([{ fullName: '', studentNumber: '' }]);
+    }
+  };
+
+  const handleAddGroupmate = () => {
+    if (groupmates.length >= 6) {
+      setGroupmatesError('Maximum of 6 groupmates permitted.');
+      return;
+    }
+    setGroupmates(prev => [...prev, { fullName: '', studentNumber: '' }]);
+    setGroupmatesError('');
+  };
+
+  const handleRemoveGroupmate = (index) => {
+    setGroupmates(prev => prev.filter((_, i) => i !== index));
+    setGroupmatesError('');
+  };
+
+  const handleGroupmateChange = (index, field, value) => {
+    if (errorMessage) clearError();
+    setGroupmates(prev => {
+      const copy = [...prev];
+      if (field === 'studentNumber') {
+        const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+        copy[index] = { ...copy[index], studentNumber: digitsOnly };
+      } else {
+        copy[index] = { ...copy[index], [field]: value };
+      }
+      return copy;
+    });
+    setGroupmatesError('');
+  };
+
+  // Instant pre-validation for duplicate student number on this date (primary student + groupmates)
   const duplicateBooking = useMemo(() => {
-    const cleanId = formData.studentNumber.trim().toLowerCase();
-    if (!cleanId || cleanId.length < 5) return null;
-    return bookings.find(b => 
-      String(b.studentNumber || '').trim().toLowerCase() === cleanId && b.date === date
-    );
-  }, [formData.studentNumber, bookings, date]);
+    const cleanPrimaryId = formData.studentNumber.trim().toLowerCase();
+    
+    // Check primary student
+    if (cleanPrimaryId && cleanPrimaryId.length >= 5) {
+      const found = (bookings || []).find(b => {
+        if (b.date !== date) return false;
+        if (String(b.studentNumber || '').trim().toLowerCase() === cleanPrimaryId) return true;
+        if (Array.isArray(b.groupmates)) {
+          return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === cleanPrimaryId);
+        }
+        return false;
+      });
+      if (found) {
+        return {
+          studentName: formData.fullName || 'Primary Student',
+          studentNumber: formData.studentNumber,
+          timeDisplay: found.timeDisplay
+        };
+      }
+    }
+
+    // Check each groupmate if group defense is enabled
+    if (isGroup && Array.isArray(groupmates)) {
+      for (const g of groupmates) {
+        const cleanGId = String(g.studentNumber || '').trim().toLowerCase();
+        if (cleanGId && cleanGId.length >= 5) {
+          const found = (bookings || []).find(b => {
+            if (b.date !== date) return false;
+            if (String(b.studentNumber || '').trim().toLowerCase() === cleanGId) return true;
+            if (Array.isArray(b.groupmates)) {
+              return b.groupmates.some(gm => String(gm.studentNumber || '').trim().toLowerCase() === cleanGId);
+            }
+            return false;
+          });
+          if (found) {
+            return {
+              studentName: g.fullName || 'Groupmate',
+              studentNumber: g.studentNumber,
+              timeDisplay: found.timeDisplay
+            };
+          }
+        }
+      }
+    }
+
+    return null;
+  }, [formData.studentNumber, formData.fullName, isGroup, groupmates, bookings, date]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -95,6 +179,37 @@ export default function BookingForm({
       return;
     }
 
+    // Validate groupmates if group defense is active
+    if (isGroup) {
+      if (groupmates.length === 0) {
+        setGroupmatesError('Please add at least one groupmate or uncheck the group defense option.');
+        return;
+      }
+
+      const allStudentNumbers = [cleanNum];
+      for (let i = 0; i < groupmates.length; i++) {
+        const g = groupmates[i];
+        const gName = (g.fullName || '').trim();
+        const gNum = (g.studentNumber || '').trim();
+
+        if (!gName) {
+          setGroupmatesError(`Please enter the full name for Groupmate ${i + 1}.`);
+          return;
+        }
+
+        if (!/^20\d{8}$/.test(gNum)) {
+          setGroupmatesError(`Groupmate ${i + 1} (${gName}) student number must be 10 digits starting with 20xx (e.g. 2021123456).`);
+          return;
+        }
+
+        if (allStudentNumbers.includes(gNum)) {
+          setGroupmatesError(`Duplicate student number "${gNum}" detected. Group members and primary student cannot share the same ID.`);
+          return;
+        }
+        allStudentNumbers.push(gNum);
+      }
+    }
+
     const cleanEmail = formData.email.trim().toLowerCase();
     const isValidEmail = cleanEmail.endsWith('@mymail.mapua.edu.ph') || 
                          cleanEmail.endsWith('@mapua.edu.ph') || 
@@ -104,7 +219,16 @@ export default function BookingForm({
       return;
     }
 
-    onSubmit(formData);
+    const payload = {
+      ...formData,
+      isGroup: Boolean(isGroup && groupmates.length > 0),
+      groupmates: isGroup ? groupmates.map(g => ({
+        fullName: g.fullName.trim(),
+        studentNumber: g.studentNumber.trim()
+      })) : []
+    };
+
+    onSubmit(payload);
   };
 
   // If no slot is selected yet, render a focused, uncluttered invitation card
@@ -269,7 +393,7 @@ export default function BookingForm({
               Duplicate Submission Detected
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>
-              Student ID <strong>{formData.studentNumber}</strong> is already booked for <strong>{duplicateBooking.timeDisplay}</strong> on this date. Multiple reservations are not permitted.
+              Student <strong>{duplicateBooking.studentName}</strong> (ID: <strong>{duplicateBooking.studentNumber}</strong>) is already booked for <strong>{duplicateBooking.timeDisplay}</strong> on this date. Multiple reservations are not permitted.
             </div>
             <button
               type="button"
@@ -385,6 +509,146 @@ export default function BookingForm({
           ) : (
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               Must be exactly 10 digits starting with batch <strong>2000+</strong> (e.g. 2019xxxxxx, 2022xxxxxx).
+            </div>
+          )}
+        </div>
+
+        {/* Group Defense & Groupmates Option */}
+        <div style={{
+          background: isGroup ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+          border: isGroup ? '1px solid var(--mapua-crimson)' : '1px dashed var(--border-medium)',
+          borderRadius: 'var(--radius-md)',
+          padding: '12px 14px',
+          marginBottom: '16px',
+          transition: 'all 0.2s ease'
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={16} color="var(--mapua-crimson)" />
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Group Defense / Add Groupmates
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Check this option if this reservation represents a defense team or capstone group.
+                </div>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={isGroup}
+              onChange={handleToggleGroup}
+              style={{ accentColor: 'var(--mapua-crimson)', width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+          </label>
+
+          {isGroup && (
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  Group Members ({groupmates.length})
+                </span>
+                {groupmates.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={handleAddGroupmate}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.72rem', padding: '4px 8px', gap: '4px' }}
+                  >
+                    <Plus size={12} />
+                    <span>Add Member</span>
+                  </button>
+                )}
+              </div>
+
+              {groupmates.map((gm, idx) => (
+                <div key={idx} style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--mapua-crimson)' }}>
+                      Groupmate #{idx + 1}
+                    </span>
+                    {groupmates.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveGroupmate(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '2px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Remove groupmate"
+                      >
+                        <Trash2 size={13} color="var(--mapua-crimson)" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required={isGroup}
+                        placeholder="Last Name, First Name"
+                        value={gm.fullName}
+                        onChange={(e) => handleGroupmateChange(idx, 'fullName', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          fontSize: '0.8rem',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-medium)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>
+                        Student Number * (10 digits)
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={10}
+                        required={isGroup}
+                        placeholder="e.g. 2021123456"
+                        value={gm.studentNumber}
+                        onChange={(e) => handleGroupmateChange(idx, 'studentNumber', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          fontSize: '0.8rem',
+                          fontFamily: 'var(--font-mono)',
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-medium)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {groupmatesError && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--mapua-crimson)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                  <AlertCircle size={12} />
+                  <span>{groupmatesError}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

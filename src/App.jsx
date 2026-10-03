@@ -169,14 +169,38 @@ export default function App() {
       return;
     }
 
-    // Check duplicate student number locally
+    // Check duplicate student number locally (primary student)
     const cleanId = String(formData.studentNumber || '').trim().toLowerCase();
-    const existing = bookings.find(b => 
-      String(b.studentNumber || '').trim().toLowerCase() === cleanId && b.date === selectedSlot.date
-    );
+    const existing = bookings.find(b => {
+      if (b.date !== selectedSlot.date) return false;
+      if (String(b.studentNumber || '').trim().toLowerCase() === cleanId) return true;
+      if (Array.isArray(b.groupmates)) {
+        return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === cleanId);
+      }
+      return false;
+    });
     if (existing) {
       setErrorMessage(`Duplicate submission: Student Number "${formData.studentNumber}" already holds a reserved slot (${existing.timeDisplay}) on this date. Please cancel your previous reservation to book a new time.`);
       return;
+    }
+
+    // Check duplicate groupmate student numbers
+    if (formData.isGroup && Array.isArray(formData.groupmates)) {
+      for (const gm of formData.groupmates) {
+        const gmClean = String(gm.studentNumber || '').trim().toLowerCase();
+        const existingGm = bookings.find(b => {
+          if (b.date !== selectedSlot.date) return false;
+          if (String(b.studentNumber || '').trim().toLowerCase() === gmClean) return true;
+          if (Array.isArray(b.groupmates)) {
+            return b.groupmates.some(g => String(g.studentNumber || '').trim().toLowerCase() === gmClean);
+          }
+          return false;
+        });
+        if (existingGm) {
+          setErrorMessage(`Duplicate submission: Groupmate "${gm.fullName}" (${gm.studentNumber}) already holds a reserved slot (${existingGm.timeDisplay}) on this date.`);
+          return;
+        }
+      }
     }
 
     setIsSubmitting(true);

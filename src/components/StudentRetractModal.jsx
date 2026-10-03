@@ -21,7 +21,11 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
         String(b.id || '').trim().toLowerCase() === cleanQuery ||
         String(b.referenceCode || '').trim().toLowerCase() === cleanQuery ||
         String(b.studentNumber || '').trim().toLowerCase() === cleanQuery ||
-        String(b.email || '').trim().toLowerCase() === cleanQuery
+        String(b.email || '').trim().toLowerCase() === cleanQuery ||
+        (Array.isArray(b.groupmates) && b.groupmates.some(g =>
+          String(g.studentNumber || '').trim().toLowerCase() === cleanQuery ||
+          String(g.fullName || '').trim().toLowerCase().includes(cleanQuery)
+        ))
       )
     : [];
 
@@ -346,6 +350,21 @@ export default function StudentRetractModal({ isOpen, onClose, bookings, onRetra
                             </span>
                           </div>
                         </div>
+
+                        {Array.isArray(b.groupmates) && b.groupmates.length > 0 && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary)',
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-medium)',
+                            borderRadius: '4px',
+                            padding: '6px 8px',
+                            marginBottom: '8px'
+                          }}>
+                            <span style={{ fontWeight: 700, color: 'var(--mapua-crimson)' }}>Group Members: </span>
+                            {b.groupmates.map(g => `${g.fullName} (${g.studentNumber})`).join(', ')}
+                          </div>
+                        )}
 
                         {b.projectTitle && (
                           <div style={{

@@ -44,9 +44,13 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
 
       const toIsoString = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
 
-      const title = encodeURIComponent(`Mapúa OJT Defense: ${booking.fullName}`);
+      const groupInfo = Array.isArray(booking.groupmates) && booking.groupmates.length > 0
+        ? `\nGroup Members:\n` + booking.groupmates.map(g => `• ${g.fullName} (${g.studentNumber})`).join('\n')
+        : '';
+
+      const title = encodeURIComponent(`Mapúa OJT Defense: ${booking.fullName}${booking.isGroup ? ' (Group)' : ''}`);
       const details = encodeURIComponent(
-        `Mapúa University OJT Defense Presentation\nStudent: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nProject: ${booking.projectTitle || 'N/A'}\nRef Code: ${booking.id}`
+        `Mapúa University OJT Defense Presentation\nLead Student: ${booking.fullName}\nID: ${booking.studentNumber}\nCourse: ${booking.course}\nProject: ${booking.projectTitle || 'N/A'}${groupInfo}\nRef Code: ${booking.id}`
       );
       const dates = `${toIsoString(startDate)}/${toIsoString(endDate)}`;
 
@@ -57,8 +61,12 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
   };
 
   // Option 1: 1-Click direct Gmail / mailto URL with pre-filled Reference Code and reservation details
+  const groupEmailText = Array.isArray(booking.groupmates) && booking.groupmates.length > 0
+    ? `\n• Group Members:\n` + booking.groupmates.map(g => `  - ${g.fullName} (${g.studentNumber})`).join('\n')
+    : '';
+
   const emailSubject = `[OJT Schedpoint] Reference Code: ${booking.id} - ${booking.fullName}`;
-  const emailBody = `Hello ${booking.fullName},\n\nHere are your official Mapúa OJT Defense reservation details:\n\n• Official Reference Code: ${booking.id}\n• Scheduled Time: ${booking.timeDisplay}\n• Date: ${booking.date}\n• Student Number: ${booking.studentNumber}\n• Course & Section: ${booking.course}\n• Project Title: ${booking.projectTitle || 'N/A'}\n\nPlease keep this Reference Code safe. You will need it to retract or reschedule your slot at:\nhttps://ojt-scheduler.netlify.app/\n\nMapúa University - Department of OJT & Career Services`;
+  const emailBody = `Hello ${booking.fullName},\n\nHere are your official Mapúa OJT Defense reservation details:\n\n• Official Reference Code: ${booking.id}\n• Scheduled Time: ${booking.timeDisplay}\n• Date: ${booking.date}\n• Student Number: ${booking.studentNumber}\n• Course & Section: ${booking.course}\n• Project Title: ${booking.projectTitle || 'N/A'}${groupEmailText}\n\nPlease keep this Reference Code safe. You will need it to retract or reschedule your slot at:\nhttps://ojt-scheduler.netlify.app/\n\nMapúa University - Department of OJT & Career Services`;
 
   const mailtoUrl = `mailto:${encodeURIComponent(booking.email || '')}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(booking.email || '')}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
@@ -250,6 +258,29 @@ export default function ConfirmationModal({ booking, onClose, onRetractBooking }
               <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600 }}>STUDENT EMAIL</div>
               <div style={{ color: 'var(--text-primary)', marginTop: '1px', wordBreak: 'break-all' }}>{booking.email}</div>
             </div>
+
+            {Array.isArray(booking.groupmates) && booking.groupmates.length > 0 && (
+              <div style={{
+                gridColumn: '1 / -1',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '8px 10px',
+                marginTop: '4px'
+              }}>
+                <div style={{ color: 'var(--mapua-crimson)', fontSize: '0.7rem', fontWeight: 700, marginBottom: '4px' }}>
+                  GROUP DEFENSE MEMBERS ({booking.groupmates.length})
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {booking.groupmates.map((gm, i) => (
+                    <div key={i} style={{ fontSize: '0.75rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: 600 }}>• {gm.fullName}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{gm.studentNumber}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Email Notification & First-Time User Instructions */}

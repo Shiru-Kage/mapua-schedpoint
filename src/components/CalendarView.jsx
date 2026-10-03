@@ -444,7 +444,13 @@ export default function CalendarView({
                     }}>
                       <Lock size={13} style={{ flexShrink: 0 }} />
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        Reserved: <strong>{booking.fullName || 'Student'}</strong> <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', opacity: 0.85 }}>({booking.studentNumber || 'Closed'})</span>
+                        Reserved: <strong>{booking.fullName || 'Student'}</strong>
+                        {Array.isArray(booking.groupmates) && booking.groupmates.length > 0 && (
+                          <span style={{ color: 'var(--mapua-crimson)', fontWeight: 700, marginLeft: '3px' }}>
+                            (+{booking.groupmates.length})
+                          </span>
+                        )}
+                        {' '}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', opacity: 0.85 }}>({booking.studentNumber || 'Closed'})</span>
                       </span>
                     </div>
                   ) : isSelected ? (
@@ -537,7 +543,15 @@ export default function CalendarView({
                     whiteSpace: 'nowrap'
                   }}>
                     {isBooked ? (
-                      <span><strong>{booking.fullName || 'Student'}</strong> ({booking.studentNumber || 'Closed'})</span>
+                      <span>
+                        <strong>{booking.fullName || 'Student'}</strong>
+                        {Array.isArray(booking.groupmates) && booking.groupmates.length > 0 && (
+                          <span style={{ color: 'var(--mapua-crimson)', fontWeight: 700, marginLeft: '3px' }}>
+                            (+{booking.groupmates.length})
+                          </span>
+                        )}
+                        {' '}({booking.studentNumber || 'Closed'})
+                      </span>
                     ) : (
                       <span>{slotsData?.slotMinutes || 10} Minutes Window</span>
                     )}
