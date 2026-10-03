@@ -22,7 +22,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## 📝 Student Data Collected
+## Student Data Collected
 
 1. **Full Name** (Last Name, First Name)
 2. **Student Number** (e.g., `2022104592`)
