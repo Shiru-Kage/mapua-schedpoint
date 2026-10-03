@@ -4,7 +4,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## 📅 Schedule Windows & Intervals
+## Schedule Windows & Intervals
 
 * **Morning Session**: **7:00 AM – 11:00 AM** (24 individual 10-minute slots)
   * `07:00 - 07:10 AM`, `07:10 - 07:20 AM`, ... `10:50 - 11:00 AM`
@@ -14,7 +14,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## ⚡ Collision Prevention & Locking
+## Collision Prevention & Locking
 
 * When a student selects and submits an open slot, the slot is **permanently marked as Taken** with an atomic collision check.
 * If another student is viewing the page at the same time, the slot updates to **"Taken"** in real time.
@@ -31,7 +31,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## 🎟️ Student Features
+## Student Features
 
 * **Booking Pass / Ticket**: Displays booking reference code, date, slot time, and student details.
 * **Print Pass**: Formatted for paper or PDF save.
@@ -39,7 +39,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## 🛡️ Instructor Portal (Admin Dashboard)
+## Instructor Portal (Admin Dashboard)
 
 * **Access**: Click **Instructor Portal** in top navigation and enter PIN (Default: `1234`).
 * **Live Roster**: View all appointments sorted by time slot with real-time fill rates.
@@ -49,7 +49,7 @@ A modern scheduling web application engineered for student consultations, defens
 
 ---
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
 Inside the project directory:
 
@@ -63,7 +63,7 @@ npm run dev
 
 ---
 
-## ☁️ Optional Cloud Hosting (Vercel / Firebase)
+## Optional Cloud Hosting (Vercel / Firebase)
 
 If you wish to deploy this on the web with a public URL:
 1. Create a free project on [Firebase Console](https://console.firebase.google.com/).
